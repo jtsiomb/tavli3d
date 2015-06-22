@@ -1,6 +1,7 @@
 #ifndef BOARD_H_
 #define BOARD_H_
 
+#include <vector>
 #include "mesh.h"
 
 #define NUM_SLOTS	24
@@ -11,7 +12,10 @@ enum { EMPTY = 0, MINE, OTHER };
 class Board {
 private:
 	int slots[NUM_SLOTS][MAX_PUCKS];
-	Mesh *board_mesh, *puck_mesh;
+	std::vector<Mesh*> board_meshes;
+	Mesh *puck_mesh;
+
+	bool generate();
 
 public:
 	Board();

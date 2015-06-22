@@ -5,15 +5,16 @@
 #include "opengl.h"
 #include "mesh.h"
 //#include "xform_node.h"
-#include "shader.h"
 
-int Mesh::global_sdr_loc[NUM_MESH_ATTR] = {
+int Mesh::global_sdr_loc[NUM_MESH_ATTR] = { 0, 1, 2, 3, 4, 5, 6 };
+/*
 	(int)SDR_ATTR_VERTEX,
 	(int)SDR_ATTR_NORMAL,
 	(int)SDR_ATTR_TANGENT,
 	(int)SDR_ATTR_TEXCOORD,
 	(int)SDR_ATTR_COLOR,
 	-1, -1};
+*/
 unsigned int Mesh::intersect_mode = ISECT_DEFAULT;
 float Mesh::vertex_sel_dist = 0.01;
 float Mesh::vis_vecsize = 1.0;
@@ -555,12 +556,9 @@ int Mesh::get_bones_count() const
 
 void Mesh::draw() const
 {
-#ifdef GL_ES_VERSION_2_0
-	if(!SdrProg::active) {
-		fprintf(stderr, "%s: CrippledGL ES can't draw without a shader\n", __FUNCTION__);
-		return;
-	}
-#endif
+	int cur_sdr;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
+
 
 	((Mesh*)this)->update_buffers();
 
@@ -569,7 +567,7 @@ void Mesh::draw() const
 		return;
 	}
 
-	if(SdrProg::active) {
+	if(cur_sdr) {
 		// rendering with shaders
 		if(global_sdr_loc[MESH_ATTR_VERTEX] == -1) {
 			fprintf(stderr, "%s: shader attribute location for vertices unset\n", __FUNCTION__);
@@ -618,7 +616,7 @@ void Mesh::draw() const
 		glDrawArrays(GL_TRIANGLES, 0, nverts);
 	}
 
-	if(SdrProg::active) {
+	if(cur_sdr) {
 		// rendered with shaders
 		for(int i=0; i<NUM_MESH_ATTR; i++) {
 			int loc = global_sdr_loc[i];
@@ -1128,7 +1126,6 @@ void Triangle::draw() const
 
 	glDisableVertexAttribArray(vloc);
 	glDisableVertexAttribArray(nloc);
-	CHECK_GLERROR;
 }
 
 void Triangle::draw_wire() const
@@ -1142,7 +1139,6 @@ void Triangle::draw_wire() const
 	glDrawElements(GL_LINES, 6, GL_UNSIGNED_INT, idxarr);
 
 	glDisableVertexAttribArray(vloc);
-	CHECK_GLERROR;
 }
 
 Vector3 Triangle::calc_barycentric(const Vector3 &pos) const

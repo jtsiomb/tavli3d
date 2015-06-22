@@ -6,7 +6,7 @@ obj = $(src:.cc=.o)
 bin = tavli
 
 CXXFLAGS = -pedantic -Wall -g
-LDFLAGS = $(libgl)
+LDFLAGS = $(libgl) -lvmath -limago -lm -lpthread
 
 ifeq ($(shell uname -s), Darwin)
 	libgl = -framework OpenGL -framework GLUT -lGLEW

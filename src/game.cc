@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <GL/glew.h>
 #include "game.h"
+#include "board.h"
 
 static void draw_backdrop();
 
 int win_width, win_height;
+
+static Board board;
 
 static float cam_theta, cam_phi = 25, cam_dist = 6;
 static bool bnstate[8];
@@ -19,11 +22,16 @@ bool game_init()
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 
+	if(!board.init()) {
+		return false;
+	}
+
 	return true;
 }
 
 void game_cleanup()
 {
+	board.destroy();
 }
 
 void game_update(unsigned long time_msec)
@@ -42,13 +50,16 @@ void game_display()
 
 	draw_backdrop();
 
+	board.draw();
+
+	/*
 	glBegin(GL_QUADS);
 	glNormal3f(0, 1, 0);
 	glVertex3f(-1, 0, 1);
 	glVertex3f(1, 0, 1);
 	glVertex3f(1, 0, -1);
 	glVertex3f(-1, 0, -1);
-	glEnd();
+	glEnd();*/
 }
 
 static void draw_backdrop()
@@ -85,7 +96,7 @@ void game_reshape(int x, int y)
 {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(50, (float)x / (float)y, 0.5, 500.0);
+	gluPerspective(50, (float)x / (float)y, 0.2, 200.0);
 
 	glViewport(0, 0, x, y);
 }
