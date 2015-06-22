@@ -5,7 +5,7 @@
 
 Board::Board()
 {
-	puck_mesh = 0;
+	puck_obj = 0;
 	clear();
 }
 
@@ -25,13 +25,13 @@ bool Board::init()
 
 void Board::destroy()
 {
-	for(size_t i=0; i<board_meshes.size(); i++) {
-		delete board_meshes[i];
+	for(size_t i=0; i<obj.size(); i++) {
+		delete obj[i];
 	}
-	board_meshes.clear();
+	obj.clear();
 
-	delete puck_mesh;
-	puck_mesh = 0;
+	delete puck_obj;
+	puck_obj = 0;
 }
 
 void Board::clear()
@@ -41,8 +41,8 @@ void Board::clear()
 
 void Board::draw() const
 {
-	for(size_t i=0; i<board_meshes.size(); i++) {
-		board_meshes[i]->draw();
+	for(size_t i=0; i<obj.size(); i++) {
+		obj[i]->draw();
 	}
 }
 
@@ -59,11 +59,18 @@ bool Board::generate()
 {
 	Matrix4x4 xform;
 
+	obj.clear();
+
 	// generate bottom
 	Mesh *bottom = new Mesh;
 	gen_box(bottom, HSIZE, BOT_THICKNESS, HSIZE * 2.0);
 	xform.set_translation(Vector3(0, -BOT_THICKNESS / 2.0, 0));
 	bottom->apply_xform(xform);
+
+	Object *obottom = new Object;
+	obottom->set_mesh(bottom);
+	obj.push_back(obottom);
+
 
 	// generate the 4 sides
 	Mesh *sides = new Mesh;
@@ -94,6 +101,11 @@ bool Board::generate()
 	sides->append(tmp);
 	tmp.clear();
 
+	Object *osides = new Object;
+	osides->set_mesh(sides);
+	obj.push_back(osides);
+
+
 	// generate the hinges
 	Mesh *hinges = new Mesh;
 	gen_cylinder(hinges, HINGE_RAD, HINGE_HEIGHT, 10, 1, 1);
@@ -108,10 +120,10 @@ bool Board::generate()
 
 	hinges->append(tmp);
 
+	Object *ohinges = new Object;
+	ohinges->set_mesh(hinges);
+	obj.push_back(ohinges);
 
-	board_meshes.clear();
-	board_meshes.push_back(bottom);
-	board_meshes.push_back(sides);
-	board_meshes.push_back(hinges);
+
 	return true;
 }

@@ -37,7 +37,7 @@ void Object::draw() const
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	glLoadTransposeMatrixf(matrix[0]);
+	glMultTransposeMatrixf(matrix[0]);
 
 	mesh->draw();
 
