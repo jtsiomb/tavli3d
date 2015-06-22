@@ -4,12 +4,15 @@
 #include "vmath/vmath.h"
 
 class GeomObject;
+class SceneNode;
 
 struct HitPoint {
 	float dist;				//< parametric distance along the ray
 	Vector3 pos;			//< position of intersection (orig + dir * dist)
 	Vector3 normal;			//< normal at the point of intersection
 	const void *obj;		//< pointer to the intersected object
+	const SceneNode *node;
+	Ray ray;
 };
 
 class GeomObject {

@@ -2,6 +2,7 @@
 #define OBJECT_H_
 
 #include "mesh.h"
+#include "geom.h"
 
 class Object {
 private:
@@ -19,6 +20,8 @@ public:
 	Mesh *get_mesh() const;
 
 	void draw() const;
+
+	bool intersect(const Ray &ray, HitPoint *hit) const;
 };
 
 #endif	// OBJECT_H_

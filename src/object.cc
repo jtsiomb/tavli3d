@@ -43,3 +43,8 @@ void Object::draw() const
 
 	glPopMatrix();
 }
+
+bool Object::intersect(const Ray &ray, HitPoint *hit) const
+{
+	return false;	// TODO
+}
