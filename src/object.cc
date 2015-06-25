@@ -4,6 +4,7 @@
 Object::Object()
 {
 	mesh = 0;
+	tex = 0;
 }
 
 Object::~Object()
@@ -31,9 +32,21 @@ Mesh *Object::get_mesh() const
 	return mesh;
 }
 
+void Object::set_texture(unsigned int tex)
+{
+	this->tex = tex;
+}
+
 void Object::draw() const
 {
 	if(!mesh) return;
+
+	if(tex) {
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glEnable(GL_TEXTURE_2D);
+	} else {
+		glDisable(GL_TEXTURE_2D);
+	}
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -42,6 +55,10 @@ void Object::draw() const
 	mesh->draw();
 
 	glPopMatrix();
+
+	if(tex) {
+		glDisable(GL_TEXTURE_2D);
+	}
 }
 
 bool Object::intersect(const Ray &ray, HitPoint *hit) const

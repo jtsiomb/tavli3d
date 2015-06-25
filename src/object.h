@@ -8,6 +8,7 @@ class Object {
 private:
 	Mesh *mesh;
 	Matrix4x4 matrix;
+	unsigned int tex;
 
 public:
 	Object();
@@ -18,6 +19,8 @@ public:
 
 	void set_mesh(Mesh *m);
 	Mesh *get_mesh() const;
+
+	void set_texture(unsigned int tex);
 
 	void draw() const;
 

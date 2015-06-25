@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "object.h"
+#include "image.h"
 
 #define NUM_SLOTS	24
 #define MAX_PUCKS	30
@@ -15,7 +16,10 @@ private:
 	std::vector<Object*> obj;
 	Object *puck_obj;
 
+	Image img_wood, img_field;
+
 	bool generate();
+	bool generate_textures();
 
 public:
 	Board();
