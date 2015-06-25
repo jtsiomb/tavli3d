@@ -141,6 +141,22 @@ bool Board::generate()
 	return true;
 }
 
+static float wood(float x, float y)
+{
+	float u = x;
+	float v = y;
+	x += 1.0;
+	x *= 10.0;
+	y *= 20.0;
+
+	float len = sqrt(x * x + y * y) + turbulence2(u * 6.0, v * 12.0, 2) * 1.2 +
+		turbulence2(u * 0.5, v, 2) * 15.0;
+	float val = fmod(len, 1.0);
+
+	//val = val * 0.5 + 0.5;
+	return val < 0.0 ? 0.0 : (val > 1.0 ? 1.0 : val);
+}
+
 static bool spike(float x, float y)
 {
 	x = fmod(x * 5.0, 1.0);
@@ -169,14 +185,15 @@ static bool center_circle(float x, float y, float rad)
 
 bool Board::generate_textures()
 {
+	static const Vector3 wcol1 = Vector3(0.6, 0.4, 0.2);
+	static const Vector3 wcol2 = Vector3(0.53, 0.32, 0.1);//Vector3(0.38, 0.25, 0.08);
+
 	const int xsz = 512;
 	const int ysz = 1024;
 
 	img_field.create(xsz, ysz);
-	clear_image(&img_field, 0, 0, 0);
 
 	unsigned char *pptr = img_field.pixels;
-
 	for(int i=0; i<ysz; i++) {
 		float v = (float)i / (float)ysz;
 
@@ -185,6 +202,9 @@ bool Board::generate_textures()
 
 			int r = 0, g = 0, b = 0;
 
+			float wood_val = wood(u, v);
+
+			// pattern mask
 			float x = u;
 			float y = v < 0.5 ? v * 2.0 : 2.0 - v * 2.0;
 			bool inside = false;
@@ -196,13 +216,18 @@ bool Board::generate_textures()
 				(diamond(x, y - 0.023) && !diamond(x, y - 0.028));
 			inside |= center_circle(x, y, 0.03);
 
+			Vector3 wood_color = lerp(wcol1, wcol2, wood_val) * 0.9;
 			if(inside) {
-				r = g = b = 255;
+				wood_color = lerp(wcol1, wcol2, 1.0 - wood_val) * 2.0;
 			}
 
-			pptr[0] = r;
-			pptr[1] = g;
-			pptr[2] = b;
+			r = (int)(wood_color.x * 255.0);
+			g = (int)(wood_color.y * 255.0);
+			b = (int)(wood_color.z * 255.0);
+
+			pptr[0] = r > 255 ? 255 : r;
+			pptr[1] = g > 255 ? 255 : g;
+			pptr[2] = b > 255 ? 255 : b;
 			pptr += 3;
 		}
 	}
