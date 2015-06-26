@@ -9,7 +9,7 @@ int win_width, win_height;
 
 static Board board;
 
-static float cam_theta, cam_phi = 25, cam_dist = 3;
+static float cam_theta, cam_phi = 45, cam_dist = 3;
 static bool bnstate[8];
 static int prev_x, prev_y;
 

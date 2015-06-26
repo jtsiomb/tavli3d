@@ -183,6 +183,15 @@ bool Board::generate()
 	obj.push_back(dbgobj);
 	*/
 
+	// meshgen stats
+	printf("Generated board:\n  %u meshes\n", (unsigned int)obj.size());
+	unsigned int polycount = 0;
+	for(size_t i=0; i<obj.size(); i++) {
+		const Mesh *m = obj[i]->get_mesh();
+		polycount += m->get_poly_count();
+	}
+	printf("  %u polygons\n", polycount);
+
 	return true;
 }
 
@@ -249,7 +258,7 @@ bool Board::generate_textures()
 	static const Vector3 wcol2 = Vector3(0.53, 0.32, 0.1);
 	static const Vector3 wcol3 = Vector3(0.38, 0.25, 0.08);
 
-	img_field.create(512, 1024);
+	img_field.create(1024, 1024);
 	unsigned char *pptr = img_field.pixels;
 	for(int i=0; i<img_field.height; i++) {
 		float v = (float)i / (float)img_field.height;
