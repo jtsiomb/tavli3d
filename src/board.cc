@@ -335,7 +335,7 @@ bool Board::generate_textures()
 
 			// rust pattern
 			float w1 = fbm2(u * 4.0, v * 4.0, 3) * 0.5 + 0.5;
-			float w2 = fbm2(u * 8.0, v * 8.0, 1) * 0.5 + 0.5;
+			//float w2 = fbm2(u * 8.0, v * 8.0, 1) * 0.5 + 0.5;
 			Vector3 col = lerp(rusty_col1, rusty_col2 * 0.5, w1);
 
 			// center hinge split
