@@ -16,7 +16,7 @@ private:
 	std::vector<Object*> obj;
 	Object *puck_obj;
 
-	Image img_wood, img_field;
+	Image img_wood, img_field, img_hinge;
 
 	bool generate();
 	bool generate_textures();

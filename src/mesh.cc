@@ -322,6 +322,11 @@ void Mesh::append(const Mesh &mesh)
 {
 	unsigned int idxoffs = nverts;
 
+	if(!nverts) {
+		clone(mesh);
+		return;
+	}
+
 	nverts += mesh.nverts;
 	nfaces += mesh.nfaces;
 
