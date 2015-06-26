@@ -931,6 +931,72 @@ bool Mesh::intersect(const Ray &ray, HitPoint *hit) const
 }
 
 
+// texture coordinate manipulation
+void Mesh::texcoord_apply_xform(const Matrix4x4 &xform)
+{
+	if(!has_attrib(MESH_ATTR_TEXCOORD)) {
+		return;
+	}
+
+	for(unsigned int i=0; i<nverts; i++) {
+		Vector4 tc = get_attrib(MESH_ATTR_TEXCOORD, i);
+		set_attrib(MESH_ATTR_TEXCOORD, i, tc.transformed(xform));
+	}
+}
+
+void Mesh::texcoord_gen_plane(const Vector3 &norm, const Vector3 &tang)
+{
+	if(!nverts) return;
+
+	if(!has_attrib(MESH_ATTR_TEXCOORD)) {
+		// allocate texture coordinate attribute array
+		set_attrib_data(MESH_ATTR_TEXCOORD, 2, nverts);
+	}
+
+	Vector3 n = norm.normalized();
+	Vector3 b = cross_product(n, tang).normalized();
+	Vector3 t = cross_product(b, n);
+
+	for(unsigned int i=0; i<nverts; i++) {
+		Vector3 pos = get_attrib(MESH_ATTR_VERTEX, i);
+
+		// distance along the tangent direction
+		float u = dot_product(pos, t);
+		// distance along the bitangent direction
+		float v = dot_product(pos, b);
+
+		set_attrib(MESH_ATTR_TEXCOORD, i, Vector4(u, v, 0, 1));
+	}
+}
+
+void Mesh::texcoord_gen_box()
+{
+	if(!nverts || !has_attrib(MESH_ATTR_NORMAL)) return;
+
+	if(!has_attrib(MESH_ATTR_TEXCOORD)) {
+		// allocate texture coordinate attribute array
+		set_attrib_data(MESH_ATTR_TEXCOORD, 2, nverts);
+	}
+
+	for(unsigned int i=0; i<nverts; i++) {
+		Vector3 pos = Vector3(get_attrib(MESH_ATTR_VERTEX, i)) * 0.5 + Vector3(0.5, 0.5, 0.5);
+		Vector3 norm = get_attrib(MESH_ATTR_NORMAL, i);
+
+		float abs_nx = fabs(norm.x);
+		float abs_ny = fabs(norm.y);
+		float abs_nz = fabs(norm.z);
+		int dom = abs_nx > abs_ny && abs_nx > abs_nz ? 0 : (abs_ny > abs_nz ? 1 : 2);
+
+		float uv[2], *uvptr = uv;
+		for(int j=0; j<3; j++) {
+			if(j == dom) continue;	// skip dominant axis
+
+			*uvptr++ = pos[j];
+		}
+		set_attrib(MESH_ATTR_TEXCOORD, i, Vector4(uv[0], uv[1], 0, 1));
+	}
+}
+
 // ------ private member functions ------
 
 void Mesh::calc_aabb()

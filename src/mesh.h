@@ -220,6 +220,11 @@ public:
 	 *     If you intend to use it in a speed-critical part of the code, you'll *have* to optimize it!
 	 */
 	bool intersect(const Ray &ray, HitPoint *hit = 0) const;
+
+	// texture coordinate manipulation
+	void texcoord_apply_xform(const Matrix4x4 &xform);
+	void texcoord_gen_plane(const Vector3 &norm, const Vector3 &tang);
+	void texcoord_gen_box();
 };
 
 #endif	// MESH_H_

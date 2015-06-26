@@ -52,8 +52,10 @@ void game_display()
 	glRotatef(cam_phi, 1, 0, 0);
 	glRotatef(cam_theta, 0, 1, 0);
 
-	draw_backdrop();
+	float ldir[] = {-1, 2, 1, 0};
+	glLightfv(GL_LIGHT0, GL_POSITION, ldir);
 
+	draw_backdrop();
 	board.draw();
 }
 
