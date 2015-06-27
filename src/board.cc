@@ -60,44 +60,62 @@ void Board::draw() const
 #define HINGE_HEIGHT	(VSIZE * 0.075)
 #define PIECE_RAD		(0.45 * HSIZE / 5.0)
 
-static const float piece_cp[][3][2] = {
-	{{0, 0.25}, {1, 0.25}, {2, 0.5}},
-	{{2, 0.5}, {2.5, 0.5}, {3, 0.5}},
-	{{3, 0.5}, {4, 0.5}, {4, 0}},
-	{{4, 0}, {4, -0.5}, {3, -0.5}},
-	{{3, -0.5}, {2.5, -0.5}, {0, -0.5}},
-	//{{2, -0.5}, {1, -0.25}, {0, -0.25}}
+struct BezCurve {
+	int numcp;
+	vec2_t *cp;
+	float scale;
 };
-static const int piece_ncurves = sizeof piece_cp / sizeof *piece_cp;
+
+static const vec2_t piece_cp[] = {
+		{0, 0.25},
+		{1, 0.25},	// mid0
+		{2, 0.5},
+		{2.5, 0.5},	// mid1
+		{3, 0.5},
+		{4, 0.5},	// mid2
+		{4, 0},
+		{4, -0.5},	// mid3
+		{3, -0.5},
+		{2.5, -0.5}, // mid4
+		{0, -0.5}
+};
+static const BezCurve piece_curve = {sizeof piece_cp / sizeof *piece_cp, (vec2_t*)piece_cp, 0.25 * PIECE_RAD};
+
 
 static Vector2 piece_revol(float u, float v, void *cls)
 {
-	if(v >= 1.0) v = 1.0 - 1e-6;
-	int idx = std::min((int)(v * piece_ncurves), piece_ncurves - 1);
-	float t = fmod(v * (float)piece_ncurves, 1.0);
+	BezCurve *curve = (BezCurve*)cls;
+	int nseg = (curve->numcp - 1) / 2;
 
-	Vector2 res;
-	for(int i=0; i<2; i++) {
-		float mid = piece_cp[idx][1][i];
-		res[i] = bezier(piece_cp[idx][0][i], mid, mid, piece_cp[idx][2][i], t);
-	}
-	return res * 0.25 * PIECE_RAD;
+	if(v >= 1.0) v = 1.0 - 1e-6;
+	int cidx = std::min((int)(v * nseg), nseg - 1);
+	float t = fmod(v * (float)nseg, 1.0);
+
+	const vec2_t *cp = curve->cp + cidx * 2;
+
+	float resx = bezier(cp[0].x, cp[1].x, cp[1].x, cp[2].x, t);
+	float resy = bezier(cp[0].y, cp[1].y, cp[1].y, cp[2].y, t);
+	return Vector2(resx * curve->scale, resy * curve->scale);
 }
 
 static Vector2 piece_revol_normal(float u, float v, void *cls)
 {
+	BezCurve *curve = (BezCurve*)cls;
+	int nseg = (curve->numcp - 1) / 2;
+
 	if(v >= 1.0) v = 1.0 - 1e-6;
-	int idx = std::min((int)(v * piece_ncurves), piece_ncurves - 1);
-	float t = fmod(v * (float)piece_ncurves, 1.0);
+	int cidx = std::min((int)(v * nseg), nseg - 1);
+	float t = fmod(v * (float)nseg, 1.0);
+
+	const vec2_t *cp = curve->cp + cidx * 2;
+	Vector2 cp0 = cp[0];
+	Vector2 cp1 = cp[1];
+	Vector2 cp2 = cp[2];
 
 	Vector2 pprev, pnext;
 	for(int i=0; i<2; i++) {
-		float start = piece_cp[idx][0][i];
-		float mid = piece_cp[idx][1][i];
-		float end = piece_cp[idx][2][i];
-
-		pprev[i] = bezier(start, mid, mid, end, t - 0.05);
-		pnext[i] = bezier(start, mid, mid, end, t + 0.05);
+		pprev[i] = bezier(cp0[i], cp1[i], cp1[i], cp2[i], t - 0.05);
+		pnext[i] = bezier(cp0[i], cp1[i], cp1[i], cp2[i], t + 0.05);
 	}
 
 	float tx = pnext.x - pprev.x;
@@ -232,7 +250,7 @@ bool Board::generate()
 	*/
 
 	Mesh *piece = new Mesh;
-	gen_revol(piece, 18, 17, piece_revol, piece_revol_normal, 0);
+	gen_revol(piece, 18, 17, piece_revol, piece_revol_normal, (void*)&piece_curve);
 
 	Object *opiece = new Object;
 	opiece->set_mesh(piece);
