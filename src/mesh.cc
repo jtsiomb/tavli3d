@@ -6,6 +6,8 @@
 #include "mesh.h"
 //#include "xform_node.h"
 
+#define USE_OLDGL
+
 int Mesh::global_sdr_loc[NUM_MESH_ATTR] = { 0, 1, 2, 3, 4, 5, 6 };
 /*
 	(int)SDR_ATTR_VERTEX,
@@ -717,6 +719,9 @@ void Mesh::draw_vertices() const
 void Mesh::draw_normals() const
 {
 #ifdef USE_OLDGL
+	int cur_sdr;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
+
 	Vector3 *varr = (Vector3*)get_attrib_data(MESH_ATTR_VERTEX);
 	Vector3 *norm = (Vector3*)get_attrib_data(MESH_ATTR_NORMAL);
 	if(!varr || !norm) {
@@ -724,7 +729,7 @@ void Mesh::draw_normals() const
 	}
 
 	glBegin(GL_LINES);
-	if(get_current_shader()) {
+	if(cur_sdr) {
 		int vert_loc = global_sdr_loc[MESH_ATTR_VERTEX];
 		if(vert_loc < 0) {
 			glEnd();
@@ -750,6 +755,9 @@ void Mesh::draw_normals() const
 void Mesh::draw_tangents() const
 {
 #ifdef USE_OLDGL
+	int cur_sdr;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
+
 	Vector3 *varr = (Vector3*)get_attrib_data(MESH_ATTR_VERTEX);
 	Vector3 *tang = (Vector3*)get_attrib_data(MESH_ATTR_TANGENT);
 	if(!varr || !tang) {
@@ -757,7 +765,7 @@ void Mesh::draw_tangents() const
 	}
 
 	glBegin(GL_LINES);
-	if(get_current_shader()) {
+	if(cur_sdr) {
 		int vert_loc = global_sdr_loc[MESH_ATTR_VERTEX];
 		if(vert_loc < 0) {
 			glEnd();

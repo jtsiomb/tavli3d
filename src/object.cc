@@ -90,6 +90,72 @@ void Object::draw() const
 	glPopMatrix();
 }
 
+void Object::draw_wire(const Vector4 &col) const
+{
+	glPushAttrib(GL_ENABLE_BIT);
+	glDisable(GL_LIGHTING);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glMultTransposeMatrixf(matrix[0]);
+
+	glColor4f(col.x, col.y, col.z, col.w);
+	mesh->draw_wire();
+
+	glPopMatrix();
+	glPopAttrib();
+}
+
+void Object::draw_vertices(const Vector4 &col) const
+{
+	glPushAttrib(GL_ENABLE_BIT);
+	glDisable(GL_LIGHTING);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glMultTransposeMatrixf(matrix[0]);
+
+	glColor4f(col.x, col.y, col.z, col.w);
+	mesh->draw_vertices();
+
+	glPopMatrix();
+	glPopAttrib();
+}
+
+void Object::draw_normals(float len, const Vector4 &col) const
+{
+	glPushAttrib(GL_ENABLE_BIT);
+	glDisable(GL_LIGHTING);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glMultTransposeMatrixf(matrix[0]);
+
+	glColor4f(col.x, col.y, col.z, col.w);
+	mesh->set_vis_vecsize(len);
+	mesh->draw_normals();
+
+	glPopMatrix();
+	glPopAttrib();
+}
+
+void Object::draw_tangents(float len, const Vector4 &col) const
+{
+	glPushAttrib(GL_ENABLE_BIT);
+	glDisable(GL_LIGHTING);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glMultTransposeMatrixf(matrix[0]);
+
+	glColor4f(col.x, col.y, col.z, col.w);
+	mesh->set_vis_vecsize(len);
+	mesh->draw_tangents();
+
+	glPopMatrix();
+	glPopAttrib();
+}
+
 bool Object::intersect(const Ray &ray, HitPoint *hit) const
 {
 	return false;	// TODO

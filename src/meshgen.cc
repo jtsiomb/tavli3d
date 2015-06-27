@@ -485,3 +485,86 @@ void gen_box(Mesh *mesh, float xsz, float ysz, float zsz)
 		}
 	}
 }
+
+static inline Vector3 rev_vert(float u, float v, Vector2 (*rf)(float, float, void*), void *cls)
+{
+	Vector2 pos = rf(u, v, cls);
+
+	float angle = u * 2.0 * M_PI;
+	float x = pos.x * cos(angle);
+	float y = pos.y;
+	float z = pos.x * sin(angle);
+
+	return Vector3(x, y, z);
+}
+
+// ------ surface of revolution -------
+void gen_revol(Mesh *mesh, int usub, int vsub, Vector2 (*rfunc)(float, float, void*), void *cls)
+{
+	if(!rfunc) return;
+	if(usub < 3) usub = 3;
+	if(vsub < 1) vsub = 1;
+
+	mesh->clear();
+
+	int uverts = usub + 1;
+	int vverts = vsub + 1;
+	int num_verts = uverts * vverts;
+
+	int num_quads = usub * vsub;
+	int num_tri = num_quads * 2;
+
+	Vector3 *varr = (Vector3*)mesh->set_attrib_data(MESH_ATTR_VERTEX, 3, num_verts, 0);
+	Vector3 *narr = (Vector3*)mesh->set_attrib_data(MESH_ATTR_NORMAL, 3, num_verts, 0);
+	Vector3 *tarr = (Vector3*)mesh->set_attrib_data(MESH_ATTR_TANGENT, 3, num_verts, 0);
+	Vector2 *uvarr = (Vector2*)mesh->set_attrib_data(MESH_ATTR_TEXCOORD, 2, num_verts, 0);
+	unsigned int *idxarr = mesh->set_index_data(num_tri * 3, 0);
+
+	float du = 1.0 / (float)(uverts - 1);
+	float dv = 1.0 / (float)(vverts - 1);
+
+	float u = 0.0;
+	for(int i=0; i<uverts; i++) {
+		float v = 0.0;
+		for(int j=0; j<vverts; j++) {
+			Vector3 pos = rev_vert(u, v, rfunc, cls);
+
+			Vector3 nextu = rev_vert(fmod(u + du, 1.0), v, rfunc, cls);
+			Vector3 tang = nextu - pos;
+			if(tang.length_sq() < 1e-6) {
+				float new_v = v > 0.5 ? v - dv * 0.25 : v + dv * 0.25;
+				nextu = rev_vert(fmod(u + du, 1.0), new_v, rfunc, cls);
+				tang = nextu - pos;
+			}
+
+			Vector3 nextv = rev_vert(u, v + dv, rfunc, cls);
+			Vector3 bitan = nextv - pos;
+			if(bitan.length_sq() < 1e-6) {
+				nextv = rev_vert(u, v - dv, rfunc, cls);
+				bitan = pos - nextv;
+			}
+
+			Vector3 normal = cross_product(tang, bitan);
+
+			*varr++ = pos;
+			*narr++ = normal.normalized();
+			*tarr++ = tang.normalized();
+			*uvarr++ = Vector2(u, v);
+
+			if(i < usub && j < vsub) {
+				int idx = i * vverts + j;
+
+				*idxarr++ = idx;
+				*idxarr++ = idx + vverts + 1;
+				*idxarr++ = idx + 1;
+
+				*idxarr++ = idx;
+				*idxarr++ = idx + vverts;
+				*idxarr++ = idx + vverts + 1;
+			}
+
+			v += dv;
+		}
+		u += du;
+	}
+}

@@ -1,3 +1,4 @@
+#include <float.h>
 #include "opengl.h"
 #include "board.h"
 #include "meshgen.h"
@@ -57,6 +58,31 @@ void Board::draw() const
 #define GAP				(HSIZE * 0.025)
 #define HINGE_RAD		(GAP * 0.5)
 #define HINGE_HEIGHT	(VSIZE * 0.075)
+#define PIECE_RAD		(0.45 * HSIZE / 5.0)
+
+static const float piece_cp[][3][2] = {
+	{{0, 0.25}, {1, 0.25}, {2, 0.5}},
+	{{2, 0.5}, {2.5, 0.5}, {3, 0.5}},
+	{{3, 0.5}, {4, 0.5}, {4, 0}},
+	{{4, 0}, {4, -0.5}, {3, -0.5}},
+	{{3, -0.5}, {2.5, -0.5}, {0, -0.5}},
+	//{{2, -0.5}, {1, -0.25}, {0, -0.25}}
+};
+static const int piece_ncurves = sizeof piece_cp / sizeof *piece_cp;
+
+static Vector2 piece_revol(float u, float v, void *cls)
+{
+	if(v >= 1.0) v = 1.0 - 1e-6;
+	int idx = std::min((int)(v * piece_ncurves), piece_ncurves - 1);
+	float t = fmod(v * (float)piece_ncurves, 1.0);
+
+	Vector2 res;
+	for(int i=0; i<2; i++) {
+		float mid = piece_cp[idx][1][i];
+		res[i] = bezier(piece_cp[idx][0][i], mid, mid, piece_cp[idx][2][i], t);
+	}
+	return res * 0.25 * PIECE_RAD;
+}
 
 bool Board::generate()
 {
@@ -129,7 +155,7 @@ bool Board::generate()
 		float sign = i * 2 - 1;
 
 		// barrel
-		gen_cylinder(&tmp, HINGE_RAD, HINGE_HEIGHT, 10, 1, 1);
+		gen_cylinder(&tmp, HINGE_RAD, HINGE_HEIGHT, 8, 1, 1);
 		xform.reset_identity();
 		xform.translate(Vector3(0, WALL_HEIGHT - HINGE_RAD * 0.5, sign * VSIZE / 4.0));
 		xform.rotate(Vector3(-M_PI / 2.0, 0, 0));
@@ -182,6 +208,15 @@ bool Board::generate()
 	//dbgobj->tex_xform().set_scaling(Vector3(3, 3, 3));
 	obj.push_back(dbgobj);
 	*/
+
+	Mesh *piece = new Mesh;
+	gen_revol(piece, 18, 15, piece_revol, 0);
+
+	Object *opiece = new Object;
+	opiece->set_mesh(piece);
+	opiece->xform().set_translation(Vector3(0, 0.2, 0));
+	obj.push_back(opiece);
+
 
 	// meshgen stats
 	printf("Generated board:\n  %u meshes\n", (unsigned int)obj.size());

@@ -37,6 +37,10 @@ public:
 	void set_texture(unsigned int tex);
 
 	void draw() const;
+	void draw_wire(const Vector4 &col = Vector4(1, 1, 1, 1)) const;
+	void draw_vertices(const Vector4 &col = Vector4(1, 0.3, 0.2, 1)) const;
+	void draw_normals(float len = 1.0, const Vector4 &col = Vector4(0.1, 0.2, 1.0, 1)) const;
+	void draw_tangents(float len = 1.0, const Vector4 &col = Vector4(0.1, 1.0, 0.2, 1)) const;
 
 	bool intersect(const Ray &ray, HitPoint *hit) const;
 };
