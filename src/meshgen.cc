@@ -501,6 +501,12 @@ static inline Vector3 rev_vert(float u, float v, Vector2 (*rf)(float, float, voi
 // ------ surface of revolution -------
 void gen_revol(Mesh *mesh, int usub, int vsub, Vector2 (*rfunc)(float, float, void*), void *cls)
 {
+	gen_revol(mesh, usub, vsub, rfunc, 0, cls);
+}
+
+void gen_revol(Mesh *mesh, int usub, int vsub, Vector2 (*rfunc)(float, float, void*),
+		Vector2 (*nfunc)(float, float, void*), void *cls)
+{
 	if(!rfunc) return;
 	if(usub < 3) usub = 3;
 	if(vsub < 1) vsub = 1;
@@ -537,14 +543,19 @@ void gen_revol(Mesh *mesh, int usub, int vsub, Vector2 (*rfunc)(float, float, vo
 				tang = nextu - pos;
 			}
 
-			Vector3 nextv = rev_vert(u, v + dv, rfunc, cls);
-			Vector3 bitan = nextv - pos;
-			if(bitan.length_sq() < 1e-6) {
-				nextv = rev_vert(u, v - dv, rfunc, cls);
-				bitan = pos - nextv;
-			}
+			Vector3 normal;
+			if(nfunc) {
+				normal = rev_vert(u, v, nfunc, cls);
+			} else {
+				Vector3 nextv = rev_vert(u, v + dv, rfunc, cls);
+				Vector3 bitan = nextv - pos;
+				if(bitan.length_sq() < 1e-6) {
+					nextv = rev_vert(u, v - dv, rfunc, cls);
+					bitan = pos - nextv;
+				}
 
-			Vector3 normal = cross_product(tang, bitan);
+				normal = cross_product(tang, bitan);
+			}
 
 			*varr++ = pos;
 			*narr++ = normal.normalized();

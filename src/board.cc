@@ -84,6 +84,28 @@ static Vector2 piece_revol(float u, float v, void *cls)
 	return res * 0.25 * PIECE_RAD;
 }
 
+static Vector2 piece_revol_normal(float u, float v, void *cls)
+{
+	if(v >= 1.0) v = 1.0 - 1e-6;
+	int idx = std::min((int)(v * piece_ncurves), piece_ncurves - 1);
+	float t = fmod(v * (float)piece_ncurves, 1.0);
+
+	Vector2 pprev, pnext;
+	for(int i=0; i<2; i++) {
+		float start = piece_cp[idx][0][i];
+		float mid = piece_cp[idx][1][i];
+		float end = piece_cp[idx][2][i];
+
+		pprev[i] = bezier(start, mid, mid, end, t - 0.05);
+		pnext[i] = bezier(start, mid, mid, end, t + 0.05);
+	}
+
+	float tx = pnext.x - pprev.x;
+	float ty = pnext.y - pprev.y;
+
+	return Vector2(-ty, tx);
+}
+
 bool Board::generate()
 {
 	Mesh tmp;
@@ -210,10 +232,12 @@ bool Board::generate()
 	*/
 
 	Mesh *piece = new Mesh;
-	gen_revol(piece, 18, 15, piece_revol, 0);
+	gen_revol(piece, 18, 17, piece_revol, piece_revol_normal, 0);
 
 	Object *opiece = new Object;
 	opiece->set_mesh(piece);
+	opiece->mtl.diffuse = Vector3(0.6, 0.6, 0.6);
+	opiece->mtl.specular = Vector3(0.8, 0.8, 0.8);
 	opiece->xform().set_translation(Vector3(0, 0.2, 0));
 	obj.push_back(opiece);
 
