@@ -8,6 +8,7 @@
 #include <GL/glut.h>
 #endif
 #include "game.h"
+#include "opt.h"
 
 static void display();
 static void reshape(int x, int y);
@@ -19,9 +20,18 @@ static void motion(int x, int y);
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
-	glutInitWindowSize(1280, 800);
+
+	if(!init_options(argc, argv)) {
+		return 1;
+	}
+
+	glutInitWindowSize(opt.xres, opt.yres);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE | GLUT_MULTISAMPLE);
 	glutCreateWindow("Tavli");
+
+	if(opt.fullscreen) {
+		glutFullScreen();
+	}
 
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);

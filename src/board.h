@@ -5,16 +5,33 @@
 #include "object.h"
 #include "image.h"
 
-#define NUM_SLOTS	24
-#define MAX_PUCKS	30
+#define NUM_SLOTS		20
+#define PLAYER_PIECES	15
+#define MAX_PIECES		(PLAYER_PIECES * 2)
 
-enum { EMPTY = 0, MINE, OTHER };
+enum { MINE, OTHER };
+
+class Piece {
+private:
+	int prev_slot, prev_level;
+	unsigned long move_start;
+
+public:
+	int owner, slot, level;
+
+	Piece();
+
+	void move_to(int slot, int level, bool anim = true);
+};
+
 
 class Board {
 private:
-	int slots[NUM_SLOTS][MAX_PUCKS];
+	Piece pieces[MAX_PIECES];
+	int hist[NUM_SLOTS + 1];
+
 	std::vector<Object*> obj;
-	Object *puck_obj;
+	Object *piece_obj;
 
 	Image img_wood, img_field, img_hinge;
 
@@ -29,6 +46,12 @@ public:
 	void destroy();
 
 	void clear();
+	void setup();
+
+	int slot_pieces(int slot) const;
+	bool move_piece(int id, int slot, bool anim = true);
+
+	Vector3 piece_pos(int slot, int level = 0) const;
 
 	void draw() const;
 };

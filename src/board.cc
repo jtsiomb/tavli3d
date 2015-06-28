@@ -5,10 +5,49 @@
 #include "meshgen.h"
 #include "pnoise.h"
 #include "revol.h"
+#include "opt.h"
+
+
+#define HSIZE			1.0
+#define VSIZE			(2.0 * HSIZE)
+#define BOT_THICKNESS	(HSIZE * 0.01)
+#define WALL_THICKNESS	(HSIZE * 0.05)
+#define WALL_HEIGHT		(HSIZE * 0.1)
+#define GAP				(HSIZE * 0.025)
+#define HINGE_RAD		(GAP * 0.5)
+#define HINGE_HEIGHT	(VSIZE * 0.075)
+#define PIECE_RAD		(0.45 * HSIZE / 5.0)
+#define BOARD_OFFSET	(HSIZE / 2.0 + WALL_THICKNESS + HINGE_RAD * 0.25)
+#define PIECES_PER_LAYER	5
+
+
+Piece::Piece()
+{
+	owner = 0;
+	slot = prev_slot = -1;
+	level = 0;
+	move_start = 0;
+}
+
+void Piece::move_to(int slot, int level, bool anim)
+{
+	int prev_slot = this->slot;
+	int prev_level = this->level;
+
+	this->slot = slot;
+	this->level = level;
+
+	if(anim) {
+		this->prev_slot = prev_slot;
+		this->prev_level = prev_level;
+		move_start = cur_time;
+	}
+}
+
 
 Board::Board()
 {
-	puck_obj = 0;
+	piece_obj = 0;
 	clear();
 }
 
@@ -36,13 +75,77 @@ void Board::destroy()
 	}
 	obj.clear();
 
-	delete puck_obj;
-	puck_obj = 0;
+	delete piece_obj;
+	piece_obj = 0;
 }
 
 void Board::clear()
 {
-	memset(slots, 0, sizeof slots);
+	memset(hist, 0, sizeof hist);
+
+	for(int i=0; i<MAX_PIECES; i++) {
+		pieces[i].owner = i < PLAYER_PIECES ? MINE : OTHER;
+		move_piece(i, -1, false);
+	}
+}
+
+void Board::setup()
+{
+	static const int initial[] = { 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 2 };
+
+	clear();
+
+	int id = 0;
+	for(int i=0; i<NUM_SLOTS; i++) {
+		for(int j=0; j<initial[i]; j++) {
+			move_piece(id, i, false);
+			move_piece(PLAYER_PIECES + id, NUM_SLOTS - i - 1, false);
+			++id;
+		}
+	}
+}
+
+int Board::slot_pieces(int slot) const
+{
+	return hist[slot + 1];
+}
+
+bool Board::move_piece(int id, int slot, bool anim)
+{
+	// TODO do validity checking first
+	int prev_slot = pieces[id].slot;
+
+	pieces[id].move_to(slot, slot_pieces(slot), anim);
+	--hist[prev_slot + 1];
+	++hist[slot + 1];
+	return true;
+}
+
+Vector3 Board::piece_pos(int slot, int level) const
+{
+	int top_side = slot / 10;
+	int sidx = (top_side ? (19 - slot) : slot) % 5;
+	int left_side = (top_side ? (19 - slot) : slot) / 5;
+
+	Vector3 pos;
+
+	if(left_side) {
+		pos.x = -(sidx * HSIZE / 5.0 + BOARD_OFFSET - HSIZE / 2.0) - PIECE_RAD;
+	} else {
+		pos.x = (4 - sidx) * HSIZE / 5.0 + BOARD_OFFSET - HSIZE / 2.0 + PIECE_RAD;
+	}
+
+	int layer = level / PIECES_PER_LAYER;
+	int layer_level = level % PIECES_PER_LAYER;
+
+	pos.y = (layer + 1) * 0.25 * PIECE_RAD;
+
+	pos.z = (-VSIZE * 0.5 + PIECE_RAD + PIECE_RAD * 2.0 * layer_level);
+	if(top_side) {
+		pos.z = -pos.z;
+	}
+
+	return pos;
 }
 
 void Board::draw() const
@@ -55,17 +158,14 @@ void Board::draw() const
 			obj[i]->draw();
 		}
 	}
-}
 
-#define HSIZE	1.0
-#define VSIZE	(2.0 * HSIZE)
-#define BOT_THICKNESS	(HSIZE * 0.01)
-#define WALL_THICKNESS	(HSIZE * 0.05)
-#define WALL_HEIGHT		(HSIZE * 0.1)
-#define GAP				(HSIZE * 0.025)
-#define HINGE_RAD		(GAP * 0.5)
-#define HINGE_HEIGHT	(VSIZE * 0.075)
-#define PIECE_RAD		(0.45 * HSIZE / 5.0)
+	for(int i=0; i<MAX_PIECES; i++) {
+		Vector3 pos = piece_pos(pieces[i].slot, pieces[i].level);
+		piece_obj->xform().set_translation(pos);
+		piece_obj->mtl.diffuse = opt.piece_color[pieces[i].owner];
+		piece_obj->draw();
+	}
+}
 
 
 static const vec2_t piece_cp[] = {
@@ -106,7 +206,7 @@ bool Board::generate()
 
 		Object *obottom = new Object;
 		obottom->set_mesh(bottom);
-		obottom->xform().set_translation(Vector3(sign * (HSIZE / 2.0 + WALL_THICKNESS + HINGE_RAD * 0.25), 0, 0));
+		obottom->xform().set_translation(Vector3(sign * BOARD_OFFSET, 0, 0));
 		obottom->set_texture(img_field.texture());
 		obj.push_back(obottom);
 
@@ -222,7 +322,9 @@ bool Board::generate()
 	opiece->mtl.specular = Vector3(0.8, 0.8, 0.8);
 	opiece->xform().set_translation(Vector3(0, 0.2, 0));
 	opiece->set_shader(sdr_phong_notex);
-	obj.push_back(opiece);
+	//obj.push_back(opiece);
+
+	piece_obj = opiece;
 
 	// meshgen stats
 	printf("Generated board:\n  %u meshes\n", (unsigned int)obj.size());

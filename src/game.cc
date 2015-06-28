@@ -8,6 +8,7 @@
 static void draw_backdrop();
 
 int win_width, win_height;
+unsigned long cur_time;
 unsigned int sdr_phong, sdr_phong_notex;
 bool wireframe;
 
@@ -52,6 +53,7 @@ bool game_init()
 	if(!board.init()) {
 		return false;
 	}
+	board.setup();
 
 	if(!init_scenery()) {
 		return false;
@@ -68,6 +70,7 @@ void game_cleanup()
 
 void game_update(unsigned long time_msec)
 {
+	cur_time = time_msec;
 }
 
 void game_display()
