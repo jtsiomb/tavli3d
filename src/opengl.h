@@ -3,4 +3,21 @@
 
 #include <GL/glew.h>
 
+struct GLCaps {
+	int shaders;
+	int fsaa;
+	int sep_spec;
+};
+extern struct GLCaps glcaps;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int init_opengl();
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif	/* OPENGL_H_ */

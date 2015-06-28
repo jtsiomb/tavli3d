@@ -69,7 +69,9 @@ void Object::set_texture(unsigned int tex)
 
 void Object::set_shader(unsigned int sdr)
 {
-	this->sdr = sdr;
+	if(GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader) {
+		this->sdr = sdr;
+	}
 }
 
 void Object::draw() const

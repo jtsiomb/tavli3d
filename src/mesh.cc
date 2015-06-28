@@ -564,9 +564,10 @@ int Mesh::get_bones_count() const
 
 void Mesh::draw() const
 {
-	int cur_sdr;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
-
+	int cur_sdr = 0;
+	if(glcaps.shaders) {
+		glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
+	}
 
 	((Mesh*)this)->update_buffers();
 
@@ -720,8 +721,10 @@ void Mesh::draw_vertices() const
 void Mesh::draw_normals() const
 {
 #ifdef USE_OLDGL
-	int cur_sdr;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
+	int cur_sdr = 0;
+	if(glcaps.shaders) {
+		glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
+	}
 
 	Vector3 *varr = (Vector3*)get_attrib_data(MESH_ATTR_VERTEX);
 	Vector3 *norm = (Vector3*)get_attrib_data(MESH_ATTR_NORMAL);
@@ -756,8 +759,10 @@ void Mesh::draw_normals() const
 void Mesh::draw_tangents() const
 {
 #ifdef USE_OLDGL
-	int cur_sdr;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
+	int cur_sdr = 0;
+	if(glcaps.shaders) {
+		glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
+	}
 
 	Vector3 *varr = (Vector3*)get_attrib_data(MESH_ATTR_VERTEX);
 	Vector3 *tang = (Vector3*)get_attrib_data(MESH_ATTR_TANGENT);

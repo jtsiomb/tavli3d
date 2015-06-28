@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <GL/glew.h>
+#include "opengl.h"
 #include "game.h"
 #include "board.h"
 #include "scenery.h"
@@ -21,23 +21,32 @@ static bool dbg_busyloop;
 
 bool game_init()
 {
+	if(init_opengl() == -1) {
+		return false;
+	}
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 
-	if(GLEW_ARB_multisample) {
+	if(glcaps.sep_spec) {
+		glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
+	}
+
+	if(glcaps.fsaa) {
 		glEnable(GL_MULTISAMPLE);
 	}
 
-	Mesh::use_custom_sdr_attr = false;
-
-	if(!(sdr_phong = create_program_load("sdr/phong.v.glsl", "sdr/phong.p.glsl"))) {
-		return false;
-	}
-	if(!(sdr_phong_notex = create_program_load("sdr/phong.v.glsl", "sdr/phong-notex.p.glsl"))) {
-		return false;
+	if(glcaps.shaders) {
+		Mesh::use_custom_sdr_attr = false;
+		if(!(sdr_phong = create_program_load("sdr/phong.v.glsl", "sdr/phong.p.glsl"))) {
+			return false;
+		}
+		if(!(sdr_phong_notex = create_program_load("sdr/phong.v.glsl", "sdr/phong-notex.p.glsl"))) {
+			return false;
+		}
 	}
 
 	if(!board.init()) {
