@@ -6,6 +6,7 @@
 struct Options {
 	int xres, yres;
 	bool fullscreen;
+	bool shadows, reflections;
 
 	char *def_username, *saved_passwd;
 

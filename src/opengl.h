@@ -7,6 +7,7 @@ struct GLCaps {
 	int shaders;
 	int fsaa;
 	int sep_spec;
+	int fbo;
 };
 extern struct GLCaps glcaps;
 

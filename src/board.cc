@@ -21,6 +21,28 @@
 #define PIECES_PER_LAYER	5
 
 
+static const vec2_t piece_cp[] = {
+		{0, 0.25},
+		{1, 0.25},	// mid0
+		{2, 0.5},
+		{2.5, 0.5},	// mid1
+		{3, 0.5},
+		{4, 0.5},	// mid2
+		{4, 0},
+		{4, -0.5},	// mid3
+		{3, -0.5},
+		{2.5, -0.5}, // mid4
+		{0, -0.5}
+};
+static const BezCurve piece_curve = {
+	sizeof piece_cp / sizeof *piece_cp,
+	(vec2_t*)piece_cp,
+	0.25 * PIECE_RAD
+};
+
+#define PIECE_HEIGHT	(0.25 * PIECE_RAD)
+
+
 Piece::Piece()
 {
 	owner = 0;
@@ -138,7 +160,7 @@ Vector3 Board::piece_pos(int slot, int level) const
 	int layer = level / PIECES_PER_LAYER;
 	int layer_level = level % PIECES_PER_LAYER;
 
-	pos.y = (layer + 1) * 0.25 * PIECE_RAD;
+	pos.y = (layer + 0.5) * PIECE_HEIGHT;
 
 	pos.z = (-VSIZE * 0.5 + PIECE_RAD + PIECE_RAD * 2.0 * layer_level);
 	if(top_side) {
@@ -168,28 +190,13 @@ void Board::draw() const
 }
 
 
-static const vec2_t piece_cp[] = {
-		{0, 0.25},
-		{1, 0.25},	// mid0
-		{2, 0.5},
-		{2.5, 0.5},	// mid1
-		{3, 0.5},
-		{4, 0.5},	// mid2
-		{4, 0},
-		{4, -0.5},	// mid3
-		{3, -0.5},
-		{2.5, -0.5}, // mid4
-		{0, -0.5}
-};
-static const BezCurve piece_curve = {
-	sizeof piece_cp / sizeof *piece_cp,
-	(vec2_t*)piece_cp,
-	0.25 * PIECE_RAD
-};
-
-
 bool Board::generate()
 {
+	static const float board_spec = 0.4;
+	bool use_shadows = opt.shadows && sdr_shadow;
+	unsigned int board_sdr = use_shadows ? sdr_shadow : sdr_phong;
+	unsigned int piece_sdr = use_shadows ? sdr_shadow_notex : sdr_phong_notex;
+
 	Mesh tmp;
 	Matrix4x4 xform;
 
@@ -208,6 +215,8 @@ bool Board::generate()
 		obottom->set_mesh(bottom);
 		obottom->xform().set_translation(Vector3(sign * BOARD_OFFSET, 0, 0));
 		obottom->set_texture(img_field.texture());
+		obottom->set_shader(board_sdr);
+		obottom->mtl.specular = Vector3(board_spec, board_spec, board_spec);
 		obj.push_back(obottom);
 
 
@@ -248,6 +257,8 @@ bool Board::generate()
 		osides->set_texture(img_wood.texture());
 		osides->tex_xform().set_scaling(Vector3(2, 2, 2));
 		osides->tex_xform().rotate(-Vector3(1, 0, 0.5), M_PI / 4.0);
+		osides->mtl.specular = Vector3(board_spec, board_spec, board_spec);
+		osides->set_shader(board_sdr);
 		obj.push_back(osides);
 
 	}
@@ -321,7 +332,7 @@ bool Board::generate()
 	opiece->mtl.diffuse = Vector3(0.6, 0.6, 0.6);
 	opiece->mtl.specular = Vector3(0.8, 0.8, 0.8);
 	opiece->xform().set_translation(Vector3(0, 0.2, 0));
-	opiece->set_shader(sdr_phong_notex);
+	opiece->set_shader(piece_sdr);
 	//obj.push_back(opiece);
 
 	piece_obj = opiece;

@@ -8,6 +8,7 @@
 #include "revol.h"
 #include "image.h"
 #include "sdr.h"
+#include "opt.h"
 
 static bool gen_textures();
 
@@ -33,6 +34,7 @@ static const BezCurve table_curve = {
 
 bool init_scenery()
 {
+	unsigned int sdr = opt.shadows && sdr_shadow ? sdr_shadow : sdr_phong;
 	if(!gen_textures()) {
 		return false;
 	}
@@ -56,7 +58,7 @@ bool init_scenery()
 	otable->mtl.specular = Vector3(0.7, 0.7, 0.7);
 	otable->xform().set_translation(Vector3(0, -0.025, 0));
 	otable->set_texture(img_marble.texture());
-	otable->set_shader(sdr_phong);
+	otable->set_shader(sdr);
 	obj.push_back(otable);
 
 

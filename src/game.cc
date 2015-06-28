@@ -1,15 +1,20 @@
 #include <stdio.h>
+#include <assert.h>
 #include "opengl.h"
 #include "game.h"
 #include "board.h"
 #include "scenery.h"
 #include "sdr.h"
+#include "shadow.h"
+#include "opt.h"
 
+static void draw_scene();
 static void draw_backdrop();
 
 int win_width, win_height;
 unsigned long cur_time;
 unsigned int sdr_phong, sdr_phong_notex;
+unsigned int sdr_shadow, sdr_shadow_notex;
 bool wireframe;
 
 static Board board;
@@ -48,6 +53,20 @@ bool game_init()
 		if(!(sdr_phong_notex = create_program_load("sdr/phong.v.glsl", "sdr/phong-notex.p.glsl"))) {
 			return false;
 		}
+
+		if(glcaps.fbo) {
+			init_shadow(512);
+
+			if(!(sdr_shadow = create_program_load("sdr/shadow.v.glsl", "sdr/shadow.p.glsl"))) {
+				return false;
+			}
+			set_uniform_int(sdr_shadow, "tex", 0);
+			set_uniform_int(sdr_shadow, "shadowmap", 1);
+
+			if(!(sdr_shadow_notex = create_program_load("sdr/shadow.v.glsl", "sdr/shadow-notex.p.glsl"))) {
+				return false;
+			}
+		}
 	}
 
 	if(!board.init()) {
@@ -59,6 +78,7 @@ bool game_init()
 		return false;
 	}
 
+	assert(glGetError() == GL_NO_ERROR);
 	return true;
 }
 
@@ -66,6 +86,7 @@ void game_cleanup()
 {
 	board.destroy();
 	destroy_scenery();
+	destroy_shadow();
 }
 
 void game_update(unsigned long time_msec)
@@ -86,13 +107,42 @@ void game_display()
 	float ldir[] = {-10, 20, 10, 1};
 	glLightfv(GL_LIGHT0, GL_POSITION, ldir);
 
-	draw_backdrop();
-	draw_scenery();
-	board.draw();
+	if(opt.shadows && sdr_shadow) {
+		printf("shadow pass\n");
+
+		begin_shadow_pass(Vector3(-10, 20, 10), Vector3(0, 0, 0), 25);
+		draw_scene();
+		end_shadow_pass();
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, get_shadow_tex());
+
+		glMatrixMode(GL_TEXTURE);
+		Matrix4x4 shadow_matrix = get_shadow_matrix();
+		glLoadMatrixf(shadow_matrix[0]);
+
+		glActiveTexture(GL_TEXTURE0);
+		glMatrixMode(GL_MODELVIEW);
+
+		draw_scene();
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glActiveTexture(GL_TEXTURE0);
+	} else {
+		draw_scene();
+	}
 
 	if(dbg_busyloop) {
 		redisplay();
 	}
+}
+
+static void draw_scene()
+{
+	draw_backdrop();
+	draw_scenery();
+	board.draw();
 }
 
 static void draw_backdrop()
@@ -148,6 +198,11 @@ void game_keyboard(int bn, bool press)
 
 		case 'd':
 			dbg_busyloop = !dbg_busyloop;
+			redisplay();
+			break;
+
+		case 's':
+			opt.shadows = !opt.shadows;
 			redisplay();
 			break;
 		}
