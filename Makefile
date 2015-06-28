@@ -1,11 +1,13 @@
 PREFIX ?= /usr/local
 
 src = $(wildcard src/*.cc)
-obj = $(src:.cc=.o)
+csrc = $(wildcard src/*.c)
+obj = $(src:.cc=.o) $(csrc:.c=.o)
 dep = $(obj:.o=.d)
 
 bin = tavli
 
+CFLAGS = -pedantic -Wall -g
 CXXFLAGS = -pedantic -Wall -g
 LDFLAGS = $(libgl) -lvmath -limago -lm -lpthread
 
@@ -19,6 +21,9 @@ $(bin): $(obj)
 	$(CXX) -o $@ $(obj) $(LDFLAGS)
 
 -include $(dep)
+
+%.d: %.c
+	@$(CPP) $(CFLAGS) $< -MM -MT $(@:.d=.o) >$@
 
 %.d: %.cc
 	@$(CPP) $(CXXFLAGS) $< -MM -MT $(@:.d=.o) >$@

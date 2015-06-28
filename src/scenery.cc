@@ -7,6 +7,7 @@
 #include "object.h"
 #include "revol.h"
 #include "image.h"
+#include "sdr.h"
 
 static bool gen_textures();
 
@@ -18,9 +19,9 @@ static const vec2_t table_cp[] = {
 	{3, 0},	// mid 0
 	{5.8, 0},
 	{5.99, 0},	// mid 1
-	{6, -0.15},
-	{6.15, -0.15},	// mid 2
-	{6.2, -0.4}
+	{6, -0.1},
+	{6.1, -0.1},	// mid 2
+	{6.13, -0.3}
 };
 static const BezCurve table_curve = {
 	sizeof table_cp / sizeof *table_cp,
@@ -39,7 +40,7 @@ bool init_scenery()
 	Matrix4x4 xform;
 
 	Mesh *table = new Mesh;
-	gen_revol(table, 48, 12, bezier_revol, bezier_revol_normal, (void*)&table_curve);
+	gen_revol(table, 48, 16, bezier_revol, bezier_revol_normal, (void*)&table_curve);
 	table->texcoord_gen_plane(Vector3(0, 1, 0), Vector3(1, 0, 0));
 	xform.set_scaling(Vector3(0.5, 0.5, 0.5));
 	xform.translate(Vector3(1, 1, 0));
@@ -51,10 +52,11 @@ bool init_scenery()
 
 	Object *otable = new Object;
 	otable->set_mesh(table);
-	otable->mtl.diffuse = Vector3(0.6, 0.6, 0.6);
-	otable->mtl.specular = Vector3(0.8, 0.8, 0.8);
+	otable->mtl.diffuse = Vector3(1, 1, 1);
+	otable->mtl.specular = Vector3(0.7, 0.7, 0.7);
 	otable->xform().set_translation(Vector3(0, -0.025, 0));
 	otable->set_texture(img_marble.texture());
+	otable->set_shader(sdr_phong);
 	obj.push_back(otable);
 
 
@@ -113,7 +115,7 @@ static bool gen_textures()
 			float u = (float)j / (float)img_marble.width;
 
 			float marble_val = marble(u, v);
-			Vector3 color = lerp(marble_col2, marble_col1, marble_val);
+			Vector3 color = lerp(marble_col2, marble_col1, marble_val) * 0.6;
 
 			int r = (int)(color.x * 255.0);
 			int g = (int)(color.y * 255.0);

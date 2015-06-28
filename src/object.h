@@ -27,6 +27,7 @@ private:
 	Matrix4x4 matrix;
 	unsigned int tex;
 	Matrix4x4 tex_matrix;
+	unsigned int sdr;
 
 public:
 	Material mtl;
@@ -45,6 +46,7 @@ public:
 	Mesh *get_mesh() const;
 
 	void set_texture(unsigned int tex);
+	void set_shader(unsigned int sdr);
 
 	void draw() const;
 	void draw_wire(const Vector4 &col = Vector4(1, 1, 1, 1)) const;

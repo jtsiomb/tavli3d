@@ -2,6 +2,7 @@
 #define GAME_H_
 
 extern int win_width, win_height;
+extern unsigned int sdr_phong, sdr_phong_notex;
 
 extern bool wireframe;
 

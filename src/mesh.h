@@ -119,6 +119,8 @@ private:
 
 
 public:
+	static bool use_custom_sdr_attr;
+
 	Mesh();
 	~Mesh();
 

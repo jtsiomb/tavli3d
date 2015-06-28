@@ -8,6 +8,7 @@
 
 #define USE_OLDGL
 
+bool Mesh::use_custom_sdr_attr = true;
 int Mesh::global_sdr_loc[NUM_MESH_ATTR] = { 0, 1, 2, 3, 4, 5, 6 };
 /*
 	(int)SDR_ATTR_VERTEX,
@@ -574,7 +575,7 @@ void Mesh::draw() const
 		return;
 	}
 
-	if(cur_sdr) {
+	if(cur_sdr && use_custom_sdr_attr) {
 		// rendering with shaders
 		if(global_sdr_loc[MESH_ATTR_VERTEX] == -1) {
 			fprintf(stderr, "%s: shader attribute location for vertices unset\n", __FUNCTION__);
@@ -623,7 +624,7 @@ void Mesh::draw() const
 		glDrawArrays(GL_TRIANGLES, 0, nverts);
 	}
 
-	if(cur_sdr) {
+	if(cur_sdr && use_custom_sdr_attr) {
 		// rendered with shaders
 		for(int i=0; i<NUM_MESH_ATTR; i++) {
 			int loc = global_sdr_loc[i];
@@ -729,7 +730,7 @@ void Mesh::draw_normals() const
 	}
 
 	glBegin(GL_LINES);
-	if(cur_sdr) {
+	if(cur_sdr && use_custom_sdr_attr) {
 		int vert_loc = global_sdr_loc[MESH_ATTR_VERTEX];
 		if(vert_loc < 0) {
 			glEnd();
@@ -765,7 +766,7 @@ void Mesh::draw_tangents() const
 	}
 
 	glBegin(GL_LINES);
-	if(cur_sdr) {
+	if(cur_sdr && use_custom_sdr_attr) {
 		int vert_loc = global_sdr_loc[MESH_ATTR_VERTEX];
 		if(vert_loc < 0) {
 			glEnd();

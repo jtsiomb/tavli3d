@@ -24,6 +24,7 @@ Object::Object()
 {
 	mesh = 0;
 	tex = 0;
+	sdr = 0;
 }
 
 Object::~Object()
@@ -66,12 +67,21 @@ void Object::set_texture(unsigned int tex)
 	this->tex = tex;
 }
 
+void Object::set_shader(unsigned int sdr)
+{
+	this->sdr = sdr;
+}
+
 void Object::draw() const
 {
 	if(!mesh) return;
 
 	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT);
 	rop.setup();
+
+	if(sdr) {
+		glUseProgram(sdr);
+	}
 
 	if(tex) {
 		glBindTexture(GL_TEXTURE_2D, tex);
@@ -101,6 +111,10 @@ void Object::draw() const
 
 		glMatrixMode(GL_TEXTURE);
 		glPopMatrix();
+	}
+
+	if(sdr) {
+		glUseProgram(0);
 	}
 
 	glMatrixMode(GL_MODELVIEW);

@@ -3,10 +3,12 @@
 #include "game.h"
 #include "board.h"
 #include "scenery.h"
+#include "sdr.h"
 
 static void draw_backdrop();
 
 int win_width, win_height;
+unsigned int sdr_phong, sdr_phong_notex;
 bool wireframe;
 
 static Board board;
@@ -15,6 +17,7 @@ static float cam_theta, cam_phi = 45, cam_dist = 3;
 static bool bnstate[8];
 static int prev_x, prev_y;
 
+static bool dbg_busyloop;
 
 bool game_init()
 {
@@ -26,6 +29,15 @@ bool game_init()
 
 	if(GLEW_ARB_multisample) {
 		glEnable(GL_MULTISAMPLE);
+	}
+
+	Mesh::use_custom_sdr_attr = false;
+
+	if(!(sdr_phong = create_program_load("sdr/phong.v.glsl", "sdr/phong.p.glsl"))) {
+		return false;
+	}
+	if(!(sdr_phong_notex = create_program_load("sdr/phong.v.glsl", "sdr/phong-notex.p.glsl"))) {
+		return false;
 	}
 
 	if(!board.init()) {
@@ -59,12 +71,16 @@ void game_display()
 	glRotatef(cam_phi, 1, 0, 0);
 	glRotatef(cam_theta, 0, 1, 0);
 
-	float ldir[] = {-1, 2, 1, 0};
+	float ldir[] = {-10, 20, 10, 1};
 	glLightfv(GL_LIGHT0, GL_POSITION, ldir);
 
 	draw_backdrop();
 	draw_scenery();
 	board.draw();
+
+	if(dbg_busyloop) {
+		redisplay();
+	}
 }
 
 static void draw_backdrop()
@@ -115,6 +131,11 @@ void game_keyboard(int bn, bool press)
 
 		case 'w':
 			wireframe = !wireframe;
+			redisplay();
+			break;
+
+		case 'd':
+			dbg_busyloop = !dbg_busyloop;
 			redisplay();
 			break;
 		}

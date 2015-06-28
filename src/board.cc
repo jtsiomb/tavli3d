@@ -221,6 +221,7 @@ bool Board::generate()
 	opiece->mtl.diffuse = Vector3(0.6, 0.6, 0.6);
 	opiece->mtl.specular = Vector3(0.8, 0.8, 0.8);
 	opiece->xform().set_translation(Vector3(0, 0.2, 0));
+	opiece->set_shader(sdr_phong_notex);
 	obj.push_back(opiece);
 
 	// meshgen stats
