@@ -1,15 +1,29 @@
 #include "object.h"
 #include "opengl.h"
 
+Material::Material()
+	: diffuse(1, 1, 1), specular(0, 0, 0)
+{
+	shininess = 60.0;
+	alpha = 1.0;
+}
+
+RenderOps::RenderOps()
+{
+	zwrite = true;
+}
+
+void RenderOps::setup() const
+{
+	if(!zwrite) {
+		glDepthMask(0);
+	}
+}
+
 Object::Object()
 {
 	mesh = 0;
 	tex = 0;
-
-	mtl.diffuse = Vector3(1, 1, 1);
-	mtl.specular = Vector3(0, 0, 0);
-	mtl.shininess = 60.0;
-	mtl.alpha = 1.0;
 }
 
 Object::~Object()
@@ -56,6 +70,9 @@ void Object::draw() const
 {
 	if(!mesh) return;
 
+	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT);
+	rop.setup();
+
 	if(tex) {
 		glBindTexture(GL_TEXTURE_2D, tex);
 		glEnable(GL_TEXTURE_2D);
@@ -88,6 +105,8 @@ void Object::draw() const
 
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
+
+	glPopAttrib();
 }
 
 void Object::draw_wire(const Vector4 &col) const

@@ -2,10 +2,12 @@
 #include <GL/glew.h>
 #include "game.h"
 #include "board.h"
+#include "scenery.h"
 
 static void draw_backdrop();
 
 int win_width, win_height;
+bool wireframe;
 
 static Board board;
 
@@ -30,12 +32,17 @@ bool game_init()
 		return false;
 	}
 
+	if(!init_scenery()) {
+		return false;
+	}
+
 	return true;
 }
 
 void game_cleanup()
 {
 	board.destroy();
+	destroy_scenery();
 }
 
 void game_update(unsigned long time_msec)
@@ -56,6 +63,7 @@ void game_display()
 	glLightfv(GL_LIGHT0, GL_POSITION, ldir);
 
 	draw_backdrop();
+	draw_scenery();
 	board.draw();
 }
 
@@ -104,6 +112,11 @@ void game_keyboard(int bn, bool press)
 		switch(bn) {
 		case 27:
 			quit();
+
+		case 'w':
+			wireframe = !wireframe;
+			redisplay();
+			break;
 		}
 	}
 }

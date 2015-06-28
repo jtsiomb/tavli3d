@@ -3,6 +3,8 @@
 
 extern int win_width, win_height;
 
+extern bool wireframe;
+
 bool game_init();
 void game_cleanup();
 void game_update(unsigned long time_msec);

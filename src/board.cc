@@ -1,8 +1,10 @@
 #include <float.h>
 #include "opengl.h"
 #include "board.h"
+#include "game.h"
 #include "meshgen.h"
 #include "pnoise.h"
+#include "revol.h"
 
 Board::Board()
 {
@@ -46,7 +48,12 @@ void Board::clear()
 void Board::draw() const
 {
 	for(size_t i=0; i<obj.size(); i++) {
-		obj[i]->draw();
+		if(wireframe) {
+			obj[i]->draw_wire();
+			obj[i]->draw_normals(0.075);
+		} else {
+			obj[i]->draw();
+		}
 	}
 }
 
@@ -60,11 +67,6 @@ void Board::draw() const
 #define HINGE_HEIGHT	(VSIZE * 0.075)
 #define PIECE_RAD		(0.45 * HSIZE / 5.0)
 
-struct BezCurve {
-	int numcp;
-	vec2_t *cp;
-	float scale;
-};
 
 static const vec2_t piece_cp[] = {
 		{0, 0.25},
@@ -79,50 +81,12 @@ static const vec2_t piece_cp[] = {
 		{2.5, -0.5}, // mid4
 		{0, -0.5}
 };
-static const BezCurve piece_curve = {sizeof piece_cp / sizeof *piece_cp, (vec2_t*)piece_cp, 0.25 * PIECE_RAD};
+static const BezCurve piece_curve = {
+	sizeof piece_cp / sizeof *piece_cp,
+	(vec2_t*)piece_cp,
+	0.25 * PIECE_RAD
+};
 
-
-static Vector2 piece_revol(float u, float v, void *cls)
-{
-	BezCurve *curve = (BezCurve*)cls;
-	int nseg = (curve->numcp - 1) / 2;
-
-	if(v >= 1.0) v = 1.0 - 1e-6;
-	int cidx = std::min((int)(v * nseg), nseg - 1);
-	float t = fmod(v * (float)nseg, 1.0);
-
-	const vec2_t *cp = curve->cp + cidx * 2;
-
-	float resx = bezier(cp[0].x, cp[1].x, cp[1].x, cp[2].x, t);
-	float resy = bezier(cp[0].y, cp[1].y, cp[1].y, cp[2].y, t);
-	return Vector2(resx * curve->scale, resy * curve->scale);
-}
-
-static Vector2 piece_revol_normal(float u, float v, void *cls)
-{
-	BezCurve *curve = (BezCurve*)cls;
-	int nseg = (curve->numcp - 1) / 2;
-
-	if(v >= 1.0) v = 1.0 - 1e-6;
-	int cidx = std::min((int)(v * nseg), nseg - 1);
-	float t = fmod(v * (float)nseg, 1.0);
-
-	const vec2_t *cp = curve->cp + cidx * 2;
-	Vector2 cp0 = cp[0];
-	Vector2 cp1 = cp[1];
-	Vector2 cp2 = cp[2];
-
-	Vector2 pprev, pnext;
-	for(int i=0; i<2; i++) {
-		pprev[i] = bezier(cp0[i], cp1[i], cp1[i], cp2[i], t - 0.05);
-		pnext[i] = bezier(cp0[i], cp1[i], cp1[i], cp2[i], t + 0.05);
-	}
-
-	float tx = pnext.x - pprev.x;
-	float ty = pnext.y - pprev.y;
-
-	return Vector2(-ty, tx);
-}
 
 bool Board::generate()
 {
@@ -250,7 +214,7 @@ bool Board::generate()
 	*/
 
 	Mesh *piece = new Mesh;
-	gen_revol(piece, 18, 17, piece_revol, piece_revol_normal, (void*)&piece_curve);
+	gen_revol(piece, 18, 17, bezier_revol, bezier_revol_normal, (void*)&piece_curve);
 
 	Object *opiece = new Object;
 	opiece->set_mesh(piece);
@@ -258,7 +222,6 @@ bool Board::generate()
 	opiece->mtl.specular = Vector3(0.8, 0.8, 0.8);
 	opiece->xform().set_translation(Vector3(0, 0.2, 0));
 	obj.push_back(opiece);
-
 
 	// meshgen stats
 	printf("Generated board:\n  %u meshes\n", (unsigned int)obj.size());

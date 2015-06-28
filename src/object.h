@@ -10,6 +10,15 @@ struct Material {
 	Vector3 specular;
 	float shininess;
 	float alpha;
+
+	Material();
+};
+
+struct RenderOps {
+	bool zwrite;
+
+	RenderOps();
+	void setup() const;
 };
 
 class Object {
@@ -21,6 +30,7 @@ private:
 
 public:
 	Material mtl;
+	RenderOps rop;
 
 	Object();
 	~Object();
