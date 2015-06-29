@@ -15,6 +15,7 @@ int win_width, win_height;
 unsigned long cur_time;
 unsigned int sdr_phong, sdr_phong_notex;
 unsigned int sdr_shadow, sdr_shadow_notex;
+unsigned int sdr_unlit;
 bool wireframe;
 
 static Board board;
@@ -23,7 +24,7 @@ static float cam_theta, cam_phi = 45, cam_dist = 3;
 static bool bnstate[8];
 static int prev_x, prev_y;
 
-static bool dbg_busyloop;
+static bool dbg_busyloop, dbg_show_shadowmap;
 
 bool game_init()
 {
@@ -36,6 +37,9 @@ bool game_init()
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
+
+	float amb[] = {0.3, 0.3, 0.3, 1.0};
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, amb);
 
 	if(glcaps.sep_spec) {
 		glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
@@ -55,7 +59,7 @@ bool game_init()
 		}
 
 		if(glcaps.fbo) {
-			init_shadow(512);
+			init_shadow(2048);
 
 			if(!(sdr_shadow = create_program_load("sdr/shadow.v.glsl", "sdr/shadow.p.glsl"))) {
 				return false;
@@ -66,6 +70,7 @@ bool game_init()
 			if(!(sdr_shadow_notex = create_program_load("sdr/shadow.v.glsl", "sdr/shadow-notex.p.glsl"))) {
 				return false;
 			}
+			set_uniform_int(sdr_shadow_notex, "shadowmap", 1);
 		}
 	}
 
@@ -104,13 +109,11 @@ void game_display()
 	glRotatef(cam_phi, 1, 0, 0);
 	glRotatef(cam_theta, 0, 1, 0);
 
-	float ldir[] = {-10, 20, 10, 1};
-	glLightfv(GL_LIGHT0, GL_POSITION, ldir);
+	float lpos[] = {-10, 20, 10, 1};
+	glLightfv(GL_LIGHT0, GL_POSITION, lpos);
 
 	if(opt.shadows && sdr_shadow) {
-		printf("shadow pass\n");
-
-		begin_shadow_pass(Vector3(-10, 20, 10), Vector3(0, 0, 0), 25);
+		begin_shadow_pass(Vector3(lpos[0], lpos[1], lpos[2]), Vector3(0, 0, 0), 4.5);
 		draw_scene();
 		end_shadow_pass();
 
@@ -119,7 +122,7 @@ void game_display()
 
 		glMatrixMode(GL_TEXTURE);
 		Matrix4x4 shadow_matrix = get_shadow_matrix();
-		glLoadMatrixf(shadow_matrix[0]);
+		glLoadTransposeMatrixf(shadow_matrix[0]);
 
 		glActiveTexture(GL_TEXTURE0);
 		glMatrixMode(GL_MODELVIEW);
@@ -129,8 +132,47 @@ void game_display()
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
 	} else {
 		draw_scene();
+	}
+
+	if(dbg_show_shadowmap) {
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+		glMatrixMode(GL_TEXTURE);
+		glLoadIdentity();
+
+		glPushAttrib(GL_ENABLE_BIT);
+		glUseProgram(0);
+		glBindTexture(GL_TEXTURE_2D, get_shadow_tex());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+		glEnable(GL_TEXTURE_2D);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_LIGHTING);
+		glDisable(GL_BLEND);
+
+		glBegin(GL_QUADS);
+		glColor4f(1, 1, 1, 1);
+		glTexCoord2f(0, 0); glVertex2f(-1, -1);
+		glTexCoord2f(1, 0); glVertex2f(1, -1);
+		glTexCoord2f(1, 1); glVertex2f(1, 1);
+		glTexCoord2f(0, 1); glVertex2f(-1, 1);
+		glEnd();
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		glPopAttrib();
+
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
 	}
 
 	if(dbg_busyloop) {
@@ -198,6 +240,11 @@ void game_keyboard(int bn, bool press)
 
 		case 'd':
 			dbg_busyloop = !dbg_busyloop;
+			redisplay();
+			break;
+
+		case 'D':
+			dbg_show_shadowmap = !dbg_show_shadowmap;
 			redisplay();
 			break;
 

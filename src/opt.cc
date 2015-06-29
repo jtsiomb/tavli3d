@@ -10,7 +10,8 @@ bool init_options(int argc, char **argv)
 	opt.xres = 1280;
 	opt.yres = 800;
 	opt.fullscreen = false;
-	opt.shadows = false; opt.reflections = true;
+	opt.shadows = true;
+	opt.reflections = true;
 
 	opt.def_username = opt.saved_passwd = 0;
 

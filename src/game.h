@@ -4,6 +4,7 @@
 extern int win_width, win_height;
 extern unsigned int sdr_phong, sdr_phong_notex;
 extern unsigned int sdr_shadow, sdr_shadow_notex;
+extern unsigned int sdr_unlit;
 extern unsigned long cur_time;
 
 extern bool wireframe;

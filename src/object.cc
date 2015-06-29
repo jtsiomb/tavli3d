@@ -1,5 +1,6 @@
 #include "object.h"
 #include "opengl.h"
+#include "shadow.h"
 
 Material::Material()
 	: diffuse(1, 1, 1), specular(0, 0, 0)
@@ -81,7 +82,7 @@ void Object::draw() const
 	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT);
 	rop.setup();
 
-	if(sdr) {
+	if(sdr && !shadow_pass) {
 		glUseProgram(sdr);
 	}
 

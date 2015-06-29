@@ -8,6 +8,7 @@ struct GLCaps {
 	int fsaa;
 	int sep_spec;
 	int fbo;
+	int shadow;
 };
 extern struct GLCaps glcaps;
 

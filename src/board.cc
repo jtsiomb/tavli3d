@@ -172,11 +172,16 @@ Vector3 Board::piece_pos(int slot, int level) const
 
 void Board::draw() const
 {
+	bool use_shadows = opt.shadows && sdr_shadow;
+	unsigned int board_sdr = use_shadows ? sdr_shadow : sdr_phong;
+	unsigned int piece_sdr = use_shadows ? sdr_shadow_notex : sdr_phong_notex;
+
 	for(size_t i=0; i<obj.size(); i++) {
 		if(wireframe) {
 			obj[i]->draw_wire();
 			obj[i]->draw_normals(0.075);
 		} else {
+			obj[i]->set_shader(board_sdr);
 			obj[i]->draw();
 		}
 	}
@@ -185,6 +190,7 @@ void Board::draw() const
 		Vector3 pos = piece_pos(pieces[i].slot, pieces[i].level);
 		piece_obj->xform().set_translation(pos);
 		piece_obj->mtl.diffuse = opt.piece_color[pieces[i].owner];
+		piece_obj->set_shader(piece_sdr);
 		piece_obj->draw();
 	}
 }
@@ -193,9 +199,6 @@ void Board::draw() const
 bool Board::generate()
 {
 	static const float board_spec = 0.4;
-	bool use_shadows = opt.shadows && sdr_shadow;
-	unsigned int board_sdr = use_shadows ? sdr_shadow : sdr_phong;
-	unsigned int piece_sdr = use_shadows ? sdr_shadow_notex : sdr_phong_notex;
 
 	Mesh tmp;
 	Matrix4x4 xform;
@@ -215,7 +218,6 @@ bool Board::generate()
 		obottom->set_mesh(bottom);
 		obottom->xform().set_translation(Vector3(sign * BOARD_OFFSET, 0, 0));
 		obottom->set_texture(img_field.texture());
-		obottom->set_shader(board_sdr);
 		obottom->mtl.specular = Vector3(board_spec, board_spec, board_spec);
 		obj.push_back(obottom);
 
@@ -258,7 +260,6 @@ bool Board::generate()
 		osides->tex_xform().set_scaling(Vector3(2, 2, 2));
 		osides->tex_xform().rotate(-Vector3(1, 0, 0.5), M_PI / 4.0);
 		osides->mtl.specular = Vector3(board_spec, board_spec, board_spec);
-		osides->set_shader(board_sdr);
 		obj.push_back(osides);
 
 	}
@@ -332,7 +333,6 @@ bool Board::generate()
 	opiece->mtl.diffuse = Vector3(0.6, 0.6, 0.6);
 	opiece->mtl.specular = Vector3(0.8, 0.8, 0.8);
 	opiece->xform().set_translation(Vector3(0, 0.2, 0));
-	opiece->set_shader(piece_sdr);
 	//obj.push_back(opiece);
 
 	piece_obj = opiece;

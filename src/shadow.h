@@ -3,6 +3,8 @@
 
 #include "vmath/vmath.h"
 
+extern bool shadow_pass;
+
 bool init_shadow(int sz);
 void destroy_shadow();
 

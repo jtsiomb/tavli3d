@@ -17,6 +17,5 @@ void main()
 			0.5, 0.5, 0.5, 1.0);
 	mat4 tex_matrix = offmat * gl_TextureMatrix[1];
 
-	shadow_tc = tex_matrix * gl_Vertex;
-	shadow_tc = shadow_tc / shadow_tc.w;
+	shadow_tc = tex_matrix * vec4(vpos, 1.0);
 }

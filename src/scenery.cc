@@ -22,7 +22,9 @@ static const vec2_t table_cp[] = {
 	{5.99, 0},	// mid 1
 	{6, -0.1},
 	{6.1, -0.1},	// mid 2
-	{6.13, -0.3}
+	{6.13, -0.3},
+	{3, -0.3},	// mid 3
+	{0, -0.3}
 };
 static const BezCurve table_curve = {
 	sizeof table_cp / sizeof *table_cp,
@@ -34,7 +36,6 @@ static const BezCurve table_curve = {
 
 bool init_scenery()
 {
-	unsigned int sdr = opt.shadows && sdr_shadow ? sdr_shadow : sdr_phong;
 	if(!gen_textures()) {
 		return false;
 	}
@@ -58,7 +59,6 @@ bool init_scenery()
 	otable->mtl.specular = Vector3(0.7, 0.7, 0.7);
 	otable->xform().set_translation(Vector3(0, -0.025, 0));
 	otable->set_texture(img_marble.texture());
-	otable->set_shader(sdr);
 	obj.push_back(otable);
 
 
@@ -86,11 +86,14 @@ void destroy_scenery()
 
 void draw_scenery()
 {
+	unsigned int sdr = opt.shadows && sdr_shadow ? sdr_shadow : sdr_phong;
+
 	for(size_t i=0; i<obj.size(); i++) {
 		if(wireframe) {
 			obj[i]->draw_wire();
 			obj[i]->draw_normals(0.075);
 		} else {
+			obj[i]->set_shader(sdr);
 			obj[i]->draw();
 		}
 	}
