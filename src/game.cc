@@ -105,7 +105,7 @@ void game_display()
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glTranslatef(0, 0, -cam_dist);
+	glTranslatef(0, 0.1, -cam_dist);
 	glRotatef(cam_phi, 1, 0, 0);
 	glRotatef(cam_theta, 0, 1, 0);
 
