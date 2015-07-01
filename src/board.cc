@@ -19,6 +19,8 @@
 #define PIECE_RAD		(0.45 * HSIZE / 5.0)
 #define BOARD_OFFSET	(HSIZE / 2.0 + WALL_THICKNESS + HINGE_RAD * 0.25)
 #define PIECES_PER_LAYER	5
+#define SLOT_WIDTH		(HSIZE / 5.0)
+#define SLOT_HEIGHT		(VSIZE * 0.4)
 
 
 static const vec2_t piece_cp[] = {
@@ -66,11 +68,37 @@ void Piece::move_to(int slot, int level, bool anim)
 	}
 }
 
+Quad::Quad()
+{
+}
+
+Quad::Quad(const Vector3 &v0, const Vector3 &v1, const Vector3 &v2, const Vector3 &v3)
+	: tri0(v0, v1, v2), tri1(v0, v2, v3)
+{
+}
+
+bool Quad::intersect(const Ray &ray, HitPoint *hit) const
+{
+	return tri0.intersect(ray, hit) || tri1.intersect(ray, hit);
+}
 
 Board::Board()
 {
 	piece_obj = 0;
 	clear();
+
+	for(int i=0; i<NUM_SLOTS; i++) {
+		Vector3 p = piece_pos(i, 0);
+		bool top_side = i >= NUM_SLOTS / 2;
+
+		float z0 = top_side ? -PIECE_RAD : PIECE_RAD;
+		float z1 = top_side ? SLOT_HEIGHT : -SLOT_HEIGHT;
+
+		slotbb[i] = Quad(p + Vector3(-SLOT_WIDTH / 2.0, 0, z0),
+				p + Vector3(SLOT_WIDTH / 2.0, 0, z0),
+				p + Vector3(SLOT_WIDTH / 2.0, 0, z1),
+				p + Vector3(-SLOT_WIDTH / 2.0, 0, z1));
+	}
 }
 
 Board::~Board()
@@ -163,11 +191,21 @@ Vector3 Board::piece_pos(int slot, int level) const
 	pos.y = (layer + 0.5) * PIECE_HEIGHT;
 
 	pos.z = (-VSIZE * 0.5 + PIECE_RAD + PIECE_RAD * 2.0 * layer_level);
-	if(top_side) {
+	if(!top_side) {
 		pos.z = -pos.z;
 	}
 
 	return pos;
+}
+
+int Board::slot_hit(const Ray &ray) const
+{
+	for(int i=0; i<NUM_SLOTS; i++) {
+		if(slotbb[i].intersect(ray)) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 void Board::draw() const
@@ -193,6 +231,40 @@ void Board::draw() const
 		piece_obj->set_shader(piece_sdr);
 		piece_obj->draw();
 	}
+
+	// draw the slot bounds
+	/*
+	static const float pal[][3] = {
+		{1, 0, 0},
+		{0, 1, 0},
+		{0, 0, 1},
+		{1, 1, 0},
+		{0, 1, 1},
+		{1, 0, 1}
+	};
+	int idx = dbg_int % NUM_SLOTS;
+	if(idx >= 0) {
+		glUseProgram(0);
+
+		glPushAttrib(GL_ENABLE_BIT);
+		glDisable(GL_LIGHTING);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+
+		glBegin(GL_TRIANGLES);
+		glColor3fv(pal[idx % (sizeof pal / sizeof *pal)]);
+		glVertex3f(slotbb[idx].tri0.v[0].x, slotbb[idx].tri0.v[0].y, slotbb[idx].tri0.v[0].z);
+		glVertex3f(slotbb[idx].tri0.v[1].x, slotbb[idx].tri0.v[1].y, slotbb[idx].tri0.v[1].z);
+		glVertex3f(slotbb[idx].tri0.v[2].x, slotbb[idx].tri0.v[2].y, slotbb[idx].tri0.v[2].z);
+		glVertex3f(slotbb[idx].tri1.v[0].x, slotbb[idx].tri1.v[0].y, slotbb[idx].tri1.v[0].z);
+		glVertex3f(slotbb[idx].tri1.v[1].x, slotbb[idx].tri1.v[1].y, slotbb[idx].tri1.v[1].z);
+		glVertex3f(slotbb[idx].tri1.v[2].x, slotbb[idx].tri1.v[2].y, slotbb[idx].tri1.v[2].z);
+		glEnd();
+
+		glPopAttrib();
+	}
+	*/
+	// TODO slot highlighting
 }
 
 

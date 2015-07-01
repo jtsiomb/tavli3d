@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "object.h"
+#include "mesh.h"
 #include "image.h"
 
 #define NUM_SLOTS		20
@@ -24,11 +25,22 @@ public:
 	void move_to(int slot, int level, bool anim = true);
 };
 
+// for slot bounds
+class Quad {
+public:
+	Triangle tri0, tri1;
+
+	Quad();
+	Quad(const Vector3 &v0, const Vector3 &v1, const Vector3 &v2, const Vector3 &v3);
+
+	bool intersect(const Ray &ray, HitPoint *hit = 0) const;
+};
 
 class Board {
 private:
 	Piece pieces[MAX_PIECES];
 	int hist[NUM_SLOTS + 1];
+	Quad slotbb[NUM_SLOTS];
 
 	std::vector<Object*> obj;
 	Object *piece_obj;
@@ -52,6 +64,8 @@ public:
 	bool move_piece(int id, int slot, bool anim = true);
 
 	Vector3 piece_pos(int slot, int level = 0) const;
+
+	int slot_hit(const Ray &ray) const;
 
 	void draw() const;
 };

@@ -17,6 +17,7 @@ unsigned int sdr_phong, sdr_phong_notex;
 unsigned int sdr_shadow, sdr_shadow_notex;
 unsigned int sdr_unlit;
 bool wireframe;
+int dbg_int;
 
 static Board board;
 
@@ -250,6 +251,18 @@ void game_keyboard(int bn, bool press)
 
 		case 's':
 			opt.shadows = !opt.shadows;
+			redisplay();
+			break;
+
+		case '=':
+			dbg_int++;
+			printf("dbg_int: %d\n", dbg_int);
+			redisplay();
+			break;
+
+		case '-':
+			dbg_int--;
+			printf("dbg_int: %d\n", dbg_int);
 			redisplay();
 			break;
 		}

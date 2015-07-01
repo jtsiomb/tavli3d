@@ -8,6 +8,7 @@ extern unsigned int sdr_unlit;
 extern unsigned long cur_time;
 
 extern bool wireframe;
+extern int dbg_int;
 
 bool game_init();
 void game_cleanup();
