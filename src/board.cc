@@ -85,6 +85,7 @@ bool Quad::intersect(const Ray &ray, HitPoint *hit) const
 Board::Board()
 {
 	piece_obj = 0;
+	slot_sel = -1;
 	clear();
 
 	for(int i=0; i<NUM_SLOTS; i++) {
@@ -208,6 +209,16 @@ int Board::slot_hit(const Ray &ray) const
 	return -1;
 }
 
+void Board::select_slot(int idx)
+{
+	slot_sel = idx < 0 || idx >= NUM_SLOTS ? -1 : idx;
+}
+
+int Board::get_selected_slot() const
+{
+	return slot_sel;
+}
+
 void Board::draw() const
 {
 	bool use_shadows = opt.shadows && sdr_shadow;
@@ -232,38 +243,50 @@ void Board::draw() const
 		piece_obj->draw();
 	}
 
-	// draw the slot bounds
-	/*
-	static const float pal[][3] = {
+	/*static const float pal[][3] = {
 		{1, 0, 0},
 		{0, 1, 0},
 		{0, 0, 1},
 		{1, 1, 0},
 		{0, 1, 1},
 		{1, 0, 1}
-	};
-	int idx = dbg_int % NUM_SLOTS;
+	};*/
+	int idx = slot_sel % NUM_SLOTS;
 	if(idx >= 0) {
 		glUseProgram(0);
 
 		glPushAttrib(GL_ENABLE_BIT);
 		glDisable(GL_LIGHTING);
 		glDisable(GL_CULL_FACE);
-		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, img_highlight.texture());
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+		glDepthMask(0);
 
 		glBegin(GL_TRIANGLES);
-		glColor3fv(pal[idx % (sizeof pal / sizeof *pal)]);
+		//glColor3fv(pal[idx % (sizeof pal / sizeof *pal)]);
+		glColor4f(1, 1, 1, 0.4);
+		glTexCoord2f(0, 0);
 		glVertex3f(slotbb[idx].tri0.v[0].x, slotbb[idx].tri0.v[0].y, slotbb[idx].tri0.v[0].z);
+		glTexCoord2f(1, 0);
 		glVertex3f(slotbb[idx].tri0.v[1].x, slotbb[idx].tri0.v[1].y, slotbb[idx].tri0.v[1].z);
+		glTexCoord2f(1, 1);
 		glVertex3f(slotbb[idx].tri0.v[2].x, slotbb[idx].tri0.v[2].y, slotbb[idx].tri0.v[2].z);
+		glTexCoord2f(0, 0);
 		glVertex3f(slotbb[idx].tri1.v[0].x, slotbb[idx].tri1.v[0].y, slotbb[idx].tri1.v[0].z);
+		glTexCoord2f(1, 1);
 		glVertex3f(slotbb[idx].tri1.v[1].x, slotbb[idx].tri1.v[1].y, slotbb[idx].tri1.v[1].z);
+		glTexCoord2f(0, 1);
 		glVertex3f(slotbb[idx].tri1.v[2].x, slotbb[idx].tri1.v[2].y, slotbb[idx].tri1.v[2].z);
 		glEnd();
 
+		glDepthMask(1);
+
 		glPopAttrib();
 	}
-	*/
 	// TODO slot highlighting
 }
 
@@ -477,6 +500,21 @@ static bool center_circle(float x, float y, float rad)
 	return sqrt(x * x + y * y) < rad;
 }
 
+static bool field_pattern(float x, float y)
+{
+	y = y < 0.5 ? y * 2.0 : 2.0 - y * 2.0;
+	bool inside = false;
+
+	inside |= (spike(x, y + 0.33333) && !spike(x, y + 0.4)) ||
+		(spike(x, y + 0.5) && !spike(x, y + 0.68));
+	inside |= (circle(x, y, 0.12) && !circle(x, y, 0.1)) || circle(x, y, 0.06);
+	inside |= (diamond(x, y) && !diamond(x, y - 0.015)) ||
+		(diamond(x, y - 0.023) && !diamond(x, y - 0.028));
+	inside |= center_circle(x, y, 0.03);
+
+	return inside;
+}
+
 bool Board::generate_textures()
 {
 	// ---- board field texture ----
@@ -492,38 +530,48 @@ bool Board::generate_textures()
 		for(int j=0; j<img_field.width; j++) {
 			float u = (float)j / (float)img_field.width;
 
-			int r = 0, g = 0, b = 0;
+			// pattern mask
+			bool inside = field_pattern(u, v);
 
 			float wood_val = wood(u, v);
-
-			// pattern mask
-			float x = u;
-			float y = v < 0.5 ? v * 2.0 : 2.0 - v * 2.0;
-			bool inside = false;
-
-			inside |= (spike(x, y + 0.33333) && !spike(x, y + 0.4)) ||
-				(spike(x, y + 0.5) && !spike(x, y + 0.68));
-			inside |= (circle(x, y, 0.12) && !circle(x, y, 0.1)) || circle(x, y, 0.06);
-			inside |= (diamond(x, y) && !diamond(x, y - 0.015)) ||
-				(diamond(x, y - 0.023) && !diamond(x, y - 0.028));
-			inside |= center_circle(x, y, 0.03);
-
 			Vector3 wood_color = lerp(wcol1, wcol2, wood_val) * 0.9;
 			if(inside) {
 				wood_color = lerp(wcol1, wcol2, 1.0 - wood_val) * 2.0;
 			}
 
-			r = (int)(wood_color.x * 255.0);
-			g = (int)(wood_color.y * 255.0);
-			b = (int)(wood_color.z * 255.0);
+			int r = (int)(wood_color.x * 255.0);
+			int g = (int)(wood_color.y * 255.0);
+			int b = (int)(wood_color.z * 255.0);
 
 			pptr[0] = r > 255 ? 255 : r;
 			pptr[1] = g > 255 ? 255 : g;
 			pptr[2] = b > 255 ? 255 : b;
-			pptr += 3;
+			pptr[3] = 255;
+			pptr += 4;
 		}
 	}
 	img_field.texture();
+
+
+	// ---- slot highlighting texture ----
+	img_highlight.create(128, 256);
+	pptr = img_highlight.pixels;
+	for(int i=0; i<img_highlight.height; i++) {
+		float v = (float)i / (float)img_highlight.height;
+		for(int j=0; j<img_highlight.width; j++) {
+			float u = (float)j / (float)img_highlight.width;
+
+			bool inside = field_pattern(u / 5.0, v * 0.445);
+
+			pptr[0] = 255;
+			pptr[1] = 255;
+			pptr[2] = 255;
+			pptr[3] = inside ? 255 : 0;
+			pptr += 4;
+		}
+	}
+	img_highlight.texture();
+
 
 	// ---- generic wood texture ----
 	img_wood.create(256, 256);
@@ -543,7 +591,8 @@ bool Board::generate_textures()
 			pptr[0] = r > 255 ? 255 : r;
 			pptr[1] = g > 255 ? 255 : g;
 			pptr[2] = b > 255 ? 255 : b;
-			pptr += 3;
+			pptr[3] = 255;
+			pptr += 4;
 		}
 	}
 	img_wood.texture();
@@ -576,8 +625,9 @@ bool Board::generate_textures()
 			pptr[0] = r > 255 ? 255 : (r < 0 ? 0 : r);
 			pptr[1] = g > 255 ? 255 : (g < 0 ? 0 : g);
 			pptr[2] = b > 255 ? 255 : (b < 0 ? 0 : b);
+			pptr[3] = 255;
 
-			pptr += 3;
+			pptr += 4;
 		}
 	}
 	img_hinge.texture();

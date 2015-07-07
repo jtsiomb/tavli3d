@@ -41,11 +41,12 @@ private:
 	Piece pieces[MAX_PIECES];
 	int hist[NUM_SLOTS + 1];
 	Quad slotbb[NUM_SLOTS];
+	int slot_sel;	// current slot selection
 
 	std::vector<Object*> obj;
 	Object *piece_obj;
 
-	Image img_wood, img_field, img_hinge;
+	Image img_wood, img_field, img_hinge, img_highlight;
 
 	bool generate();
 	bool generate_textures();
@@ -66,6 +67,8 @@ public:
 	Vector3 piece_pos(int slot, int level = 0) const;
 
 	int slot_hit(const Ray &ray) const;
+	void select_slot(int idx);
+	int get_selected_slot() const;
 
 	void draw() const;
 };

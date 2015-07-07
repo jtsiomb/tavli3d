@@ -38,7 +38,7 @@ bool Image::create(int width, int height, unsigned char *pixels)
 	destroy();
 
 	try {
-		unsigned char *tmp = new unsigned char[width * height * 3];
+		unsigned char *tmp = new unsigned char[width * height * 4];
 		this->pixels = tmp;
 		this->width = width;
 		this->height = height;
@@ -48,7 +48,7 @@ bool Image::create(int width, int height, unsigned char *pixels)
 	}
 
 	if(pixels) {
-		memcpy(this->pixels, pixels, width * height * 3);
+		memcpy(this->pixels, pixels, width * height * 4);
 	}
 	return true;
 }
@@ -69,7 +69,7 @@ void Image::destroy()
 bool Image::load(const char *fname)
 {
 	int xsz, ysz;
-	unsigned char *pix = (unsigned char*)img_load_pixels(fname, &xsz, &ysz, IMG_FMT_RGB24);
+	unsigned char *pix = (unsigned char*)img_load_pixels(fname, &xsz, &ysz, IMG_FMT_RGBA32);
 	if(!pix) {
 		return false;
 	}
@@ -96,13 +96,13 @@ unsigned int Image::texture() const
 		if(GLEW_SGIS_generate_mipmap) {
 			glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, 1);
 
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex_width, tex_height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
 					width == tex_width && height == tex_height ? pixels : 0);
 			if(width != tex_width || height != tex_height) {
-				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 			}
 		} else {
-			gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, tex_width, tex_height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+			gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, tex_width, tex_height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 		}
 
 		if(GLEW_EXT_texture_filter_anisotropic) {
@@ -138,28 +138,45 @@ void Image::invalidate_texture()
 
 void clear_image(Image *img)
 {
-	clear_image(img, 0, 0, 0);
+	clear_image(img, 0, 0, 0, 255);
 }
 
-void clear_image(Image *img, float r, float g, float b)
+void clear_image(Image *img, float r, float g, float b, float a)
 {
 	if(!img->pixels) {
 		return;
 	}
 
-	unsigned char col[3];
+	unsigned char col[4];
 	unsigned char *ptr = img->pixels;
 	int npix = img->width * img->height;
 
 	col[0] = (int)(r * 255.0);
 	col[1] = (int)(g * 255.0);
 	col[2] = (int)(b * 255.0);
+	col[3] = (int)(a * 255.0);
 
 	for(int i=0; i<npix; i++) {
-		for(int j=0; j<3; j++) {
+		for(int j=0; j<4; j++) {
 			ptr[j] = col[j];
 		}
-		ptr += 3;
+		ptr += 4;
+	}
+}
+
+void clear_image_alpha(Image *img, float a)
+{
+	if(!img->pixels) {
+		return;
+	}
+
+	unsigned char alpha = (int)(a * 255.0);
+	unsigned char *ptr = img->pixels;
+	int npix = img->width * img->height;
+
+	for(int i=0; i<npix; i++) {
+		ptr[3] = alpha;
+		ptr += 4;
 	}
 }
 
@@ -168,7 +185,7 @@ bool combine_image(Image *dest, const Image *aimg, const Image *bimg, ImgCombine
 	int xsz = dest->width;
 	int ysz = dest->height;
 	int npixels = xsz * ysz;
-	int nbytes = npixels * 3;
+	int nbytes = npixels * 4;
 	int tint = (int)(t * 255);
 
 	if(aimg->width != xsz || bimg->width != xsz || aimg->height != ysz || bimg->height != ysz) {

@@ -30,7 +30,8 @@ public:
 };
 
 void clear_image(Image *img);
-void clear_image(Image *img, float r, float g, float b);
+void clear_image(Image *img, float r, float g, float b, float a = 255);
+void clear_image_alpha(Image *img, float a);
 
 enum ImgCombine {
 	IMG_OP_ADD,

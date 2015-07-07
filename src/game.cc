@@ -19,6 +19,8 @@ unsigned int sdr_unlit;
 bool wireframe;
 int dbg_int;
 
+Ray pick_ray;
+
 static Board board;
 
 static float cam_theta, cam_phi = 45, cam_dist = 3;
@@ -289,13 +291,29 @@ void game_mmotion(int x, int y)
 
 		if(cam_phi < -90) cam_phi = -90;
 		if(cam_phi > 90) cam_phi = 90;
-
-		redisplay();
 	}
 	if(bnstate[2]) {
 		cam_dist += dy * 0.1;
 		if(cam_dist < 0.0) cam_dist = 0.0;
-
-		redisplay();
 	}
+
+	// in all cases construct the global pick ray
+	double viewmat[16], projmat[16];
+	int vp[4], ysz;
+	double px, py, pz;
+
+	glGetIntegerv(GL_VIEWPORT, vp);
+	glGetDoublev(GL_MODELVIEW_MATRIX, viewmat);
+	glGetDoublev(GL_PROJECTION_MATRIX, projmat);
+
+	ysz = vp[3] - vp[1];
+
+	gluUnProject(x, ysz - y, 0, viewmat, projmat, vp, &px, &py, &pz);
+	pick_ray.origin = Vector3(px, py, pz);
+	gluUnProject(x, ysz - y, 1, viewmat, projmat, vp, &px, &py, &pz);
+	pick_ray.dir = Vector3(px, py, pz) - pick_ray.origin;
+
+	board.select_slot(board.slot_hit(pick_ray));
+
+	redisplay();
 }

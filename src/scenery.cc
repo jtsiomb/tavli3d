@@ -129,7 +129,8 @@ static bool gen_textures()
 			pptr[0] = r > 255 ? 255 : (r < 0 ? 0 : r);
 			pptr[1] = g > 255 ? 255 : (g < 0 ? 0 : g);
 			pptr[2] = b > 255 ? 255 : (b < 0 ? 0 : b);
-			pptr += 3;
+			pptr[3] = 255;
+			pptr += 4;
 		}
 	}
 	img_marble.texture();
