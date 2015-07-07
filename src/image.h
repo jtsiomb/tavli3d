@@ -42,4 +42,7 @@ enum ImgCombine {
 
 bool combine_image(Image *dest, const Image *aimg, const Image *bimg, ImgCombine op = IMG_OP_LERP, float t = 0.5);
 
+void convolve_horiz_image(Image *dest, float *kern, int ksz, float scale = 0.0);
+void convolve_vert_image(Image *dest, float *kern, int ksz, float scale = 0.0);
+
 #endif	// IMAGE_H_

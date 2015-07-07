@@ -1,4 +1,5 @@
 #include <string.h>
+#include <alloca.h>
 #include "opengl.h"
 #include "image.h"
 #include "imago2.h"
@@ -231,6 +232,119 @@ bool combine_image(Image *dest, const Image *aimg, const Image *bimg, ImgCombine
 
 	dest->invalidate_texture();
 	return true;
+}
+
+void convolve_horiz_image(Image *dest, float *kern, int ksz, float scale)
+{
+	if((ksz & 1) == 0) {
+		fprintf(stderr, "%s: kernel size (%d) must be odd, skipping last value\n", __FUNCTION__, ksz);
+		--ksz;
+	}
+	if(scale == 0.0) {
+		// calculate scale factor
+		float sum = 0.0;
+		for(int i=0; i<ksz; i++) {
+			sum += kern[i];
+		}
+		scale = 1.0 / sum;
+	}
+	int krad = ksz / 2;
+	float *buf = (float*)alloca(dest->width * 4 * sizeof *buf);
+	unsigned char *sptr = dest->pixels;
+
+	for(int i=0; i<dest->height; i++) {
+		float *bptr = buf;
+		for(int j=0; j<dest->width * 4; j++) {
+			*bptr++ = (float)(sptr[j] / 255.0);
+		}
+
+		for(int j=0; j<dest->width; j++) {
+			float col[] = {0, 0, 0, 0};
+
+			for(int k=0; k<ksz; k++) {
+				int idx = j + k - krad;
+				if(idx < 0) idx = 0;
+				if(idx >= dest->width) idx = dest->width - 1;
+
+				col[0] += buf[idx * 4] * kern[k];
+				col[1] += buf[idx * 4 + 1] * kern[k];
+				col[2] += buf[idx * 4 + 2] * kern[k];
+				col[3] += buf[idx * 4 + 3] * kern[k];
+			}
+
+			int ri = (int)(col[0] * scale * 255.0);
+			int gi = (int)(col[1] * scale * 255.0);
+			int bi = (int)(col[2] * scale * 255.0);
+			int ai = (int)(col[3] * scale * 255.0);
+
+			sptr[0] = ri < 0 ? 0 : (ri > 255 ? 255 : ri);
+			sptr[1] = gi < 0 ? 0 : (gi > 255 ? 255 : gi);
+			sptr[2] = bi < 0 ? 0 : (bi > 255 ? 255 : bi);
+			sptr[3] = ai < 0 ? 0 : (ai > 255 ? 255 : ai);
+			sptr += 4;
+		}
+	}
+
+	dest->invalidate_texture();
+}
+
+void convolve_vert_image(Image *dest, float *kern, int ksz, float scale)
+{
+	if((ksz & 1) == 0) {
+		fprintf(stderr, "%s: kernel size (%d) must be odd, skipping last value\n", __FUNCTION__, ksz);
+		--ksz;
+	}
+	if(scale == 0.0) {
+		// calculate scale factor
+		float sum = 0.0;
+		for(int i=0; i<ksz; i++) {
+			sum += kern[i];
+		}
+		scale = 1.0 / sum;
+	}
+	int krad = ksz / 2;
+	float *buf = (float*)alloca(dest->height * 4 * sizeof *buf);
+	unsigned char *sptr = dest->pixels;
+
+	for(int i=0; i<dest->width; i++) {
+		float *bptr = buf;
+		sptr = dest->pixels + i * 4;
+
+		for(int j=0; j<dest->height; j++) {
+			for(int k=0; k<4; k++) {
+				*bptr++ = (float)(sptr[k] / 255.0);
+			}
+			sptr += dest->width * 4;
+		}
+
+		sptr = dest->pixels + i * 4;
+
+		for(int j=0; j<dest->height; j++) {
+			float col[] = {0, 0, 0, 0};
+
+			for(int k=0; k<ksz; k++) {
+				int idx = j + k - krad;
+				if(idx < 0) idx = 0;
+				if(idx >= dest->height) idx = dest->height - 1;
+
+				col[0] += buf[idx * 4] * kern[k];
+				col[1] += buf[idx * 4 + 1] * kern[k];
+				col[2] += buf[idx * 4 + 2] * kern[k];
+				col[3] += buf[idx * 4 + 3] * kern[k];
+			}
+
+			int ri = (int)(col[0] * scale * 255.0);
+			int gi = (int)(col[1] * scale * 255.0);
+			int bi = (int)(col[2] * scale * 255.0);
+			int ai = (int)(col[3] * scale * 255.0);
+
+			sptr[0] = ri < 0 ? 0 : (ri > 255 ? 255 : ri);
+			sptr[1] = gi < 0 ? 0 : (gi > 255 ? 255 : gi);
+			sptr[2] = bi < 0 ? 0 : (bi > 255 ? 255 : bi);
+			sptr[3] = ai < 0 ? 0 : (ai > 255 ? 255 : ai);
+			sptr += dest->width * 4;
+		}
+	}
 }
 
 static unsigned int next_pow2(unsigned int x)

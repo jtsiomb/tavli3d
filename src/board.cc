@@ -268,7 +268,7 @@ void Board::draw() const
 
 		glBegin(GL_TRIANGLES);
 		//glColor3fv(pal[idx % (sizeof pal / sizeof *pal)]);
-		glColor4f(1, 1, 1, 0.4);
+		glColor4f(1, 1, 1, 0.5);
 		glTexCoord2f(0, 0);
 		glVertex3f(slotbb[idx].tri0.v[0].x, slotbb[idx].tri0.v[0].y, slotbb[idx].tri0.v[0].z);
 		glTexCoord2f(1, 0);
@@ -572,6 +572,9 @@ bool Board::generate_textures()
 	}
 	img_highlight.texture();
 
+	float kern[] = {1,   5,   11,  18,  22,  18,  11,  5,   1};
+	convolve_horiz_image(&img_highlight, kern, sizeof kern / sizeof *kern);
+	convolve_vert_image(&img_highlight, kern, sizeof kern / sizeof *kern);
 
 	// ---- generic wood texture ----
 	img_wood.create(256, 256);
