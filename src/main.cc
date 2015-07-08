@@ -114,7 +114,6 @@ void update_modifiers()
 	if(delta & GLUT_ACTIVE_SHIFT) {
 		bool press = (mod & GLUT_ACTIVE_SHIFT) != 0;
 		game_modifier_key(MOD_SHIFT, press);
-		printf("shift %s\n", press ? "press" : "release");
 	}
 	if(delta & GLUT_ACTIVE_CTRL) {
 		bool press = (mod & GLUT_ACTIVE_CTRL) != 0;
