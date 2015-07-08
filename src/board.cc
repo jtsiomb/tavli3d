@@ -6,6 +6,7 @@
 #include "pnoise.h"
 #include "revol.h"
 #include "opt.h"
+#include "shadow.h"
 
 
 #define HSIZE			1.0
@@ -243,6 +244,11 @@ void Board::draw() const
 		piece_obj->draw();
 	}
 
+	// don't draw any UI stuff and highlighting polygons if we're doing
+	// the shadow buffer pass
+	if(shadow_pass)
+		return;
+
 	/*static const float pal[][3] = {
 		{1, 0, 0},
 		{0, 1, 0},
@@ -262,13 +268,13 @@ void Board::draw() const
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, img_highlight.texture());
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glDepthMask(0);
 
 		glBegin(GL_TRIANGLES);
 		//glColor3fv(pal[idx % (sizeof pal / sizeof *pal)]);
-		glColor4f(1, 1, 1, 0.5);
+		glColor4f(1, 1, 1, 0.6);
 		glTexCoord2f(0, 0);
 		glVertex3f(slotbb[idx].tri0.v[0].x, slotbb[idx].tri0.v[0].y, slotbb[idx].tri0.v[0].z);
 		glTexCoord2f(1, 0);
@@ -285,9 +291,22 @@ void Board::draw() const
 
 		glDepthMask(1);
 
+		glColor4f(0, 1, 0, 0.6);
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+		for(int i=0; i<MAX_PIECES; i++) {
+			if(pieces[i].slot == idx) {
+				Vector3 pos = piece_pos(pieces[i].slot, pieces[i].level);
+				piece_obj->xform().set_translation(pos);
+				piece_obj->xform().scale(Vector3(1.05, 1.05, 1.05));
+				piece_obj->set_shader(0);
+				piece_obj->draw();
+			}
+		}
+		glCullFace(GL_BACK);
+
 		glPopAttrib();
 	}
-	// TODO slot highlighting
 }
 
 
