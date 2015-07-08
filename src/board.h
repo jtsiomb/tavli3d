@@ -43,6 +43,8 @@ private:
 	Quad slotbb[NUM_SLOTS];
 	int slot_sel;	// current slot selection
 
+	const Piece *grabbed_piece;
+
 	std::vector<Object*> obj;
 	Object *piece_obj;
 
@@ -62,6 +64,8 @@ public:
 	void setup();
 
 	int slot_pieces(int slot) const;
+	Piece *get_top_piece(int slot);
+	const Piece *get_top_piece(int slot) const;
 	bool move_piece(int id, int slot, bool anim = true);
 
 	Vector3 piece_pos(int slot, int level = 0) const;
@@ -69,6 +73,10 @@ public:
 	int slot_hit(const Ray &ray) const;
 	void select_slot(int idx);
 	int get_selected_slot() const;
+
+	bool grab_piece(int slot);
+	bool release_piece(int slot);
+	Piece *get_grabbed_piece() const;
 
 	void draw() const;
 };

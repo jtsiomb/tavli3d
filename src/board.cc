@@ -162,10 +162,41 @@ int Board::slot_pieces(int slot) const
 	return hist[slot + 1];
 }
 
+Piece *Board::get_top_piece(int slot)
+{
+	Piece *p = 0;
+
+	for(int i=0; i<MAX_PIECES; i++) {
+		if(pieces[i].slot == slot) {
+			if(!p || pieces[i].level > p->level) {
+				p = pieces + i;
+			}
+		}
+	}
+	return p;
+}
+
+const Piece *Board::get_top_piece(int slot) const
+{
+	const Piece *p = 0;
+
+	for(int i=0; i<MAX_PIECES; i++) {
+		if(pieces[i].slot == slot) {
+			if(!p || pieces[i].level > p->level) {
+				p = pieces + i;
+			}
+		}
+	}
+	return p;
+}
+
 bool Board::move_piece(int id, int slot, bool anim)
 {
 	// TODO do validity checking first
 	int prev_slot = pieces[id].slot;
+	if(slot == prev_slot) {
+		return true;
+	}
 
 	pieces[id].move_to(slot, slot_pieces(slot), anim);
 	--hist[prev_slot + 1];
@@ -220,6 +251,35 @@ int Board::get_selected_slot() const
 	return slot_sel;
 }
 
+bool Board::grab_piece(int slot)
+{
+	if(grabbed_piece || slot < 0 || slot >= NUM_SLOTS) {
+		return false;
+	}
+	if(slot_pieces(slot) <= 0) {
+		return false;
+	}
+
+	grabbed_piece = get_top_piece(slot);
+	return true;
+}
+
+bool Board::release_piece(int slot)
+{
+	if(!grabbed_piece) {
+		return false;
+	}
+
+	if(slot < 0 || slot >= NUM_SLOTS) {
+		grabbed_piece = 0;
+		return false;
+	}
+
+	bool res = move_piece(grabbed_piece - pieces, slot, false);
+	grabbed_piece = 0;
+	return res;
+}
+
 void Board::draw() const
 {
 	bool use_shadows = opt.shadows && sdr_shadow;
@@ -237,7 +297,16 @@ void Board::draw() const
 	}
 
 	for(int i=0; i<MAX_PIECES; i++) {
-		Vector3 pos = piece_pos(pieces[i].slot, pieces[i].level);
+		Vector3 pos;
+		if(pieces + i == grabbed_piece) {
+			Plane p = Plane(Vector3(0, 1, 0), WALL_HEIGHT * 2.0);
+			HitPoint hit;
+			if(p.intersect(pick_ray, &hit)) {
+				pos = hit.pos;
+			}
+		} else {
+			pos = piece_pos(pieces[i].slot, pieces[i].level);
+		}
 		piece_obj->xform().set_translation(pos);
 		piece_obj->mtl.diffuse = opt.piece_color[pieces[i].owner];
 		piece_obj->set_shader(piece_sdr);
@@ -296,6 +365,9 @@ void Board::draw() const
 		glCullFace(GL_FRONT);
 		for(int i=0; i<MAX_PIECES; i++) {
 			if(pieces[i].slot == idx) {
+				if(pieces + i == grabbed_piece) {
+					continue;	// skip highlighting the grabbed piece (if any)
+				}
 				Vector3 pos = piece_pos(pieces[i].slot, pieces[i].level);
 				piece_obj->xform().set_translation(pos);
 				piece_obj->xform().scale(Vector3(1.05, 1.05, 1.05));

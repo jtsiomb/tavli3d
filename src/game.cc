@@ -27,6 +27,8 @@ static float cam_theta, cam_phi = 45, cam_dist = 3;
 static bool bnstate[8];
 static int prev_x, prev_y;
 
+static unsigned int modkeys;
+
 static bool dbg_busyloop, dbg_show_shadowmap;
 
 bool game_init()
@@ -271,11 +273,36 @@ void game_keyboard(int bn, bool press)
 	}
 }
 
+void game_modifier_key(int key, bool press)
+{
+	if(press) {
+		modkeys |= (1 << key);
+	} else {
+		modkeys &= ~(1 << key);
+	}
+}
+
 void game_mbutton(int bn, bool press, int x, int y)
 {
 	bnstate[bn] = press;
 	prev_x = x;
 	prev_y = y;
+
+	if(bn == 0) {
+		int slot = board.get_selected_slot();
+		if(slot != -1) {
+			if(press) {
+				if(board.grab_piece(slot)) {
+					// TODO piece grabbed sound effect
+				}
+			} else {
+				if(board.release_piece(slot)) {
+					// TODO piece released sound effect
+				}
+			}
+			redisplay();
+		}
+	}
 }
 
 void game_mmotion(int x, int y)
@@ -285,16 +312,18 @@ void game_mmotion(int x, int y)
 	prev_x = x;
 	prev_y = y;
 
-	if(bnstate[0]) {
-		cam_theta += dx * 0.5;
-		cam_phi += dy * 0.5;
+	if(modkeys) {
+		if(bnstate[0]) {
+			cam_theta += dx * 0.5;
+			cam_phi += dy * 0.5;
 
-		if(cam_phi < -90) cam_phi = -90;
-		if(cam_phi > 90) cam_phi = 90;
-	}
-	if(bnstate[2]) {
-		cam_dist += dy * 0.1;
-		if(cam_dist < 0.0) cam_dist = 0.0;
+			if(cam_phi < -90) cam_phi = -90;
+			if(cam_phi > 90) cam_phi = 90;
+		}
+		if(bnstate[2]) {
+			cam_dist += dy * 0.1;
+			if(cam_dist < 0.0) cam_dist = 0.0;
+		}
 	}
 
 	// in all cases construct the global pick ray
