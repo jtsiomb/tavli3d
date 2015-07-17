@@ -188,8 +188,13 @@ void game_display()
 static void draw_scene()
 {
 	draw_backdrop();
-	draw_scenery();
-	board.draw();
+
+	// solid pass
+	draw_scenery(DRAW_SOLID);
+	//board.draw();
+
+	// transparent pass
+	draw_scenery(DRAW_TRANSPARENT);
 }
 
 static void draw_backdrop()
@@ -287,6 +292,10 @@ void game_mbutton(int bn, bool press, int x, int y)
 	bnstate[bn] = press;
 	prev_x = x;
 	prev_y = y;
+
+	if(modkeys) {
+		return;
+	}
 
 	if(bn == 0) {
 		int slot = board.get_selected_slot();

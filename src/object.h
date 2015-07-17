@@ -16,6 +16,8 @@ struct Material {
 
 struct RenderOps {
 	bool zwrite;
+	bool cast_shadows;
+	bool transparent;
 
 	RenderOps();
 	void setup() const;
@@ -47,6 +49,7 @@ public:
 
 	void set_texture(unsigned int tex);
 	void set_shader(unsigned int sdr);
+	unsigned int get_shader() const;
 
 	void draw() const;
 	void draw_wire(const Vector4 &col = Vector4(1, 1, 1, 1)) const;

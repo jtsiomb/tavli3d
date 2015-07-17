@@ -5,6 +5,7 @@
 #include "mesh.h"
 #include "meshgen.h"
 #include "object.h"
+#include "scene.h"
 #include "revol.h"
 #include "image.h"
 #include "sdr.h"
@@ -12,8 +13,9 @@
 
 static bool gen_textures();
 
-static std::vector<Object*> obj;
+static Scene scn;
 static Image img_marble;
+static Image img_coffee;
 
 static const vec2_t table_cp[] = {
 	{0, 0},
@@ -32,6 +34,49 @@ static const BezCurve table_curve = {
 	1.0 / 6.2
 };
 
+static const vec2_t glass_cp[] = {
+	{0.0, 0.4},
+	{0.4, 0.4}, // mid 0 (inner bottom)
+	{1.1, 0.4},
+	{1.2, 0.4},	// mid 1 (inner bottom fillet)
+	{1.3, 0.5},
+	{1.8, 3.0},	// mid 2 (inside)
+	{1.8, 6.0},
+	{1.8, 6.2}, // mid 3 (top inner curve)
+	{1.9, 6.26},
+	{2.0, 6.2},	// mid 4 (top outer curve)
+	{2.0, 6.0},
+	{2.0, 3.5},	// mid 5 (outside)
+	{1.5, 0.4},
+	{1.4, 0.0},	// mid 6 (bottom fillet)
+	{1.2, 0.0},
+	{0.5, 0.0},	// mid 7 (bottom)
+	{0.0, 0.0}
+};
+static const BezCurve glass_curve = {
+	sizeof glass_cp / sizeof *glass_cp,
+	(vec2_t*)glass_cp,
+	0.075
+};
+
+static const vec2_t coffee_cp[] = {
+	{0.0, 5.55},
+	{0.9, 5.55}, // mid 0 (top)
+	{1.7, 5.55},
+	{1.8, 5.55}, // mid 1 (top fillet)
+	{1.8, 4.5},
+	{1.8, 2.5},	// mid 2 (inside)
+	{1.3, 0.5},
+	{1.2, 0.4},	// mid 3 (bottom fillet)
+	{1.1, 0.4},
+	{0.4, 0.4}, // mid 4 (bottom)
+	{0.0, 0.4}
+};
+static const BezCurve coffee_curve = {
+	sizeof coffee_cp / sizeof *coffee_cp,
+	(vec2_t*)coffee_cp,
+	0.078
+};
 
 
 bool init_scenery()
@@ -42,6 +87,7 @@ bool init_scenery()
 
 	Matrix4x4 xform;
 
+	// --- generate the table ---
 	Mesh *table = new Mesh;
 	gen_revol(table, 48, 16, bezier_revol, bezier_revol_normal, (void*)&table_curve);
 	table->texcoord_gen_plane(Vector3(0, 1, 0), Vector3(1, 0, 0));
@@ -59,14 +105,37 @@ bool init_scenery()
 	otable->mtl.specular = Vector3(0.7, 0.7, 0.7);
 	otable->xform().set_translation(Vector3(0, -0.025, 0));
 	otable->set_texture(img_marble.texture());
-	obj.push_back(otable);
+	scn.add_object(otable);
 
+	// --- generate the frappe glass ---
+	Mesh *glass = new Mesh;
+	gen_revol(glass, 24, 24, bezier_revol, bezier_revol_normal, (void*)&glass_curve);
+
+	Object *oglass = new Object;
+	oglass->set_mesh(glass);
+	oglass->set_shader(0);
+	oglass->rop.cast_shadows = false;
+	oglass->rop.transparent = true;
+	oglass->mtl.alpha = 0.3;
+	scn.add_object(oglass);
+
+	// --- generate the coffee liquid ---
+	Mesh *coffee = new Mesh;
+	gen_revol(coffee, 24, 12, bezier_revol, bezier_revol_normal, (void*)&coffee_curve);
+
+	Object *ocoffee = new Object;
+	ocoffee->set_mesh(coffee);
+	ocoffee->set_shader(0);
+	//ocoffee->mtl.diffuse = Vector3(0.42, 0.28, 0.15);
+	ocoffee->set_texture(img_coffee.texture());
+	scn.add_object(ocoffee);
 
 	// meshgen stats
-	printf("Generated scenery:\n  %u meshes\n", (unsigned int)obj.size());
+	int nobj = (int)scn.objects.size();
+	printf("Generated scenery:\n  %d meshes\n", nobj);
 	unsigned int polycount = 0;
-	for(size_t i=0; i<obj.size(); i++) {
-		const Mesh *m = obj[i]->get_mesh();
+	for(int i=0; i<nobj; i++) {
+		const Mesh *m = scn.objects[i]->get_mesh();
 		polycount += m->get_poly_count();
 	}
 	printf("  %u polygons\n", polycount);
@@ -76,27 +145,13 @@ bool init_scenery()
 
 void destroy_scenery()
 {
-	for(size_t i=0; i<obj.size(); i++) {
-		delete obj[i];
-	}
-	obj.clear();
-
+	scn.clear();
 	img_marble.destroy();
 }
 
-void draw_scenery()
+void draw_scenery(unsigned int flags)
 {
-	unsigned int sdr = opt.shadows && sdr_shadow ? sdr_shadow : sdr_phong;
-
-	for(size_t i=0; i<obj.size(); i++) {
-		if(wireframe) {
-			obj[i]->draw_wire();
-			obj[i]->draw_normals(0.075);
-		} else {
-			obj[i]->set_shader(sdr);
-			obj[i]->draw();
-		}
-	}
+	scn.draw(flags);
 }
 
 static float marble(float x, float y)
@@ -134,6 +189,33 @@ static bool gen_textures()
 		}
 	}
 	img_marble.texture();
+
+	// coffee texture
+	static const Vector3 coffee_col = Vector3(0.42, 0.28, 0.15);
+	static const Vector3 foam_col = Vector3(0.81, 0.7, 0.52);
+
+	img_coffee.create(256, 256);
+	pptr = img_coffee.pixels;
+	for(int i=0; i<img_coffee.height; i++) {
+		float v = (float)i / (float)img_coffee.height;
+		for(int j=0; j<img_coffee.width; j++) {
+			float u = (float)j / (float)img_coffee.width;
+
+			Vector3 col = v < 0.4 ? foam_col : coffee_col;
+
+			int r, g, b;
+			r = col.x * 255.0;
+			g = col.y * 255.0;
+			b = col.z * 255.0;
+
+			pptr[0] = r > 255 ? 255 : (r < 0 ? 0 : r);
+			pptr[1] = g > 255 ? 255 : (g < 0 ? 0 : g);
+			pptr[2] = b > 255 ? 255 : (b < 0 ? 0 : b);
+			pptr[3] = 255;
+			pptr += 4;
+		}
+	}
+
 
 	return true;
 }

@@ -12,12 +12,20 @@ Material::Material()
 RenderOps::RenderOps()
 {
 	zwrite = true;
+	cast_shadows = true;
+	transparent = false;
 }
 
 void RenderOps::setup() const
 {
 	if(!zwrite) {
 		glDepthMask(0);
+	}
+	if(transparent) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	} else {
+		glDisable(GL_BLEND);
 	}
 }
 
@@ -75,15 +83,30 @@ void Object::set_shader(unsigned int sdr)
 	}
 }
 
+unsigned int Object::get_shader() const
+{
+	return sdr;
+}
+
 void Object::draw() const
 {
 	if(!mesh) return;
 
+	if(shadow_pass && !rop.cast_shadows) {
+		return;
+	}
+
 	glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT);
 	rop.setup();
 
-	if(sdr && !shadow_pass) {
-		glUseProgram(sdr);
+	if(glcaps.shaders) {
+		if(sdr) {
+			if(!shadow_pass) {
+				glUseProgram(sdr);
+			}
+		} else {
+			glUseProgram(0);
+		}
 	}
 
 	if(tex) {
@@ -128,8 +151,11 @@ void Object::draw() const
 
 void Object::draw_wire(const Vector4 &col) const
 {
+	if(shadow_pass) return;
+
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_LIGHTING);
+	glUseProgram(0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -146,6 +172,7 @@ void Object::draw_vertices(const Vector4 &col) const
 {
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_LIGHTING);
+	glUseProgram(0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();

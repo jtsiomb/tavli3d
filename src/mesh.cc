@@ -562,9 +562,9 @@ int Mesh::get_bones_count() const
 }
 */
 
-void Mesh::draw() const
+bool Mesh::pre_draw() const
 {
-	int cur_sdr = 0;
+	cur_sdr = 0;
 	if(glcaps.shaders) {
 		glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
 	}
@@ -573,14 +573,14 @@ void Mesh::draw() const
 
 	if(!vattr[MESH_ATTR_VERTEX].vbo_valid) {
 		fprintf(stderr, "%s: invalid vertex buffer\n", __FUNCTION__);
-		return;
+		return false;
 	}
 
 	if(cur_sdr && use_custom_sdr_attr) {
 		// rendering with shaders
 		if(global_sdr_loc[MESH_ATTR_VERTEX] == -1) {
 			fprintf(stderr, "%s: shader attribute location for vertices unset\n", __FUNCTION__);
-			return;
+			return false;
 		}
 
 		for(int i=0; i<NUM_MESH_ATTR; i++) {
@@ -617,6 +617,13 @@ void Mesh::draw() const
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+	return true;
+}
+
+void Mesh::draw() const
+{
+	if(!pre_draw()) return;
+
 	if(ibo_valid) {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 		glDrawElements(GL_TRIANGLES, nfaces * 3, GL_UNSIGNED_INT, 0);
@@ -625,6 +632,11 @@ void Mesh::draw() const
 		glDrawArrays(GL_TRIANGLES, 0, nverts);
 	}
 
+	post_draw();
+}
+
+void Mesh::post_draw() const
+{
 	if(cur_sdr && use_custom_sdr_attr) {
 		// rendered with shaders
 		for(int i=0; i<NUM_MESH_ATTR; i++) {
@@ -652,70 +664,24 @@ void Mesh::draw() const
 
 void Mesh::draw_wire() const
 {
+	if(!pre_draw()) return;
+
 	((Mesh*)this)->update_wire_ibo();
-
-	if(!vattr[MESH_ATTR_VERTEX].vbo_valid || !wire_ibo_valid) {
-		fprintf(stderr, "%s: invalid vertex buffer\n", __FUNCTION__);
-		return;
-	}
-	if(global_sdr_loc[MESH_ATTR_VERTEX] == -1) {
-		fprintf(stderr, "%s: shader attribute location for vertices unset\n", __FUNCTION__);
-		return;
-	}
-
-	for(int i=0; i<NUM_MESH_ATTR; i++) {
-		int loc = global_sdr_loc[i];
-		if(loc >= 0 && vattr[i].vbo_valid) {
-			glBindBuffer(GL_ARRAY_BUFFER, vattr[i].vbo);
-			glVertexAttribPointer(loc, vattr[i].nelem, GL_FLOAT, GL_FALSE, 0, 0);
-			glEnableVertexAttribArray(loc);
-		}
-	}
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wire_ibo);
 	glDrawElements(GL_LINES, nfaces * 6, GL_UNSIGNED_INT, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	for(int i=0; i<NUM_MESH_ATTR; i++) {
-		int loc = global_sdr_loc[i];
-		if(loc >= 0 && vattr[i].vbo_valid) {
-			glDisableVertexAttribArray(loc);
-		}
-	}
+	post_draw();
 }
 
 void Mesh::draw_vertices() const
 {
-	((Mesh*)this)->update_buffers();
-
-	if(!vattr[MESH_ATTR_VERTEX].vbo_valid) {
-		fprintf(stderr, "%s: invalid vertex buffer\n", __FUNCTION__);
-		return;
-	}
-	if(global_sdr_loc[MESH_ATTR_VERTEX] == -1) {
-		fprintf(stderr, "%s: shader attribute location for vertices unset\n", __FUNCTION__);
-		return;
-	}
-
-	for(int i=0; i<NUM_MESH_ATTR; i++) {
-		int loc = global_sdr_loc[i];
-		if(loc >= 0 && vattr[i].vbo_valid) {
-			glBindBuffer(GL_ARRAY_BUFFER, vattr[i].vbo);
-			glVertexAttribPointer(loc, vattr[i].nelem, GL_FLOAT, GL_FALSE, 0, 0);
-			glEnableVertexAttribArray(loc);
-		}
-	}
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	if(!pre_draw()) return;
 
 	glDrawArrays(GL_POINTS, 0, nverts);
 
-	for(int i=0; i<NUM_MESH_ATTR; i++) {
-		int loc = global_sdr_loc[i];
-		if(loc >= 0 && vattr[i].vbo_valid) {
-			glDisableVertexAttribArray(loc);
-		}
-	}
+	post_draw();
 }
 
 void Mesh::draw_normals() const

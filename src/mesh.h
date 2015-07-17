@@ -117,6 +117,10 @@ private:
 	/// construct/update the wireframe index buffer (called from draw_wire).
 	void update_wire_ibo();
 
+	mutable int cur_sdr;
+	bool pre_draw() const;
+	void post_draw() const;
+
 
 public:
 	static bool use_custom_sdr_attr;
