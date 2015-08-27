@@ -191,7 +191,7 @@ static void draw_scene()
 
 	// solid pass
 	draw_scenery(DRAW_SOLID);
-	//board.draw();
+	board.draw();
 
 	// transparent pass
 	draw_scenery(DRAW_TRANSPARENT);

@@ -107,6 +107,7 @@ bool init_scenery()
 	otable->set_texture(img_marble.texture());
 	scn.add_object(otable);
 
+	/*
 	// --- generate the frappe glass ---
 	Mesh *glass = new Mesh;
 	gen_revol(glass, 24, 24, bezier_revol, bezier_revol_normal, (void*)&glass_curve);
@@ -129,6 +130,7 @@ bool init_scenery()
 	//ocoffee->mtl.diffuse = Vector3(0.42, 0.28, 0.15);
 	ocoffee->set_texture(img_coffee.texture());
 	scn.add_object(ocoffee);
+	*/
 
 	// meshgen stats
 	int nobj = (int)scn.objects.size();

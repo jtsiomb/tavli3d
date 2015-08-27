@@ -38,17 +38,92 @@ void gen_sphere(Mesh *mesh, float rad, int usub, int vsub, float urange, float v
 
 	float u = 0.0;
 	for(int i=0; i<uverts; i++) {
-		float theta = SURAD(u * urange);
+		float theta = u * 2.0 * M_PI;
 
 		float v = 0.0;
 		for(int j=0; j<vverts; j++) {
-			float phi = SVRAD(v * vrange);
+			float phi = v * M_PI;
 
 			Vector3 pos = sphvec(theta, phi);
 
 			*varr++ = pos * rad;
 			*narr++ = pos;
 			*tarr++ = (sphvec(theta + 0.1f, (float)M_PI / 2.0f) - sphvec(theta - 0.1f, (float)M_PI / 2.0f)).normalized();
+			*uvarr++ = Vector2(u * urange, v * vrange);
+
+			if(i < usub && j < vsub) {
+				int idx = i * vverts + j;
+				*idxarr++ = idx;
+				*idxarr++ = idx + 1;
+				*idxarr++ = idx + vverts + 1;
+
+				*idxarr++ = idx;
+				*idxarr++ = idx + vverts + 1;
+				*idxarr++ = idx + vverts;
+			}
+
+			v += dv;
+		}
+		u += du;
+	}
+}
+
+// -------- torus -----------
+static Vector3 torusvec(float theta, float phi, float mr, float rr)
+{
+	theta = -theta;
+
+	float rx = -cos(phi) * rr + mr;
+	float ry = sin(phi) * rr;
+	float rz = 0.0;
+
+	float x = rx * sin(theta) + rz * cos(theta);
+	float y = ry;
+	float z = -rx * cos(theta) + rz * sin(theta);
+
+	return Vector3(x, y, z);
+}
+
+void gen_torus(Mesh *mesh, float mainrad, float ringrad, int usub, int vsub, float urange, float vrange)
+{
+	if(usub < 4) usub = 4;
+	if(vsub < 2) vsub = 2;
+
+	int uverts = usub + 1;
+	int vverts = vsub + 1;
+
+	int num_verts = uverts * vverts;
+	int num_quads = usub * vsub;
+	int num_tri = num_quads * 2;
+
+	mesh->clear();
+	Vector3 *varr = (Vector3*)mesh->set_attrib_data(MESH_ATTR_VERTEX, 3, num_verts, 0);
+	Vector3 *narr = (Vector3*)mesh->set_attrib_data(MESH_ATTR_NORMAL, 3, num_verts, 0);
+	Vector3 *tarr = (Vector3*)mesh->set_attrib_data(MESH_ATTR_TANGENT, 3, num_verts, 0);
+	Vector2 *uvarr = (Vector2*)mesh->set_attrib_data(MESH_ATTR_TEXCOORD, 2, num_verts, 0);
+	unsigned int *idxarr = mesh->set_index_data(num_tri * 3, 0);
+
+	float du = urange / (float)(uverts - 1);
+	float dv = vrange / (float)(vverts - 1);
+
+	float u = 0.0;
+	for(int i=0; i<uverts; i++) {
+		float theta = u * 2.0 * M_PI;
+
+		float v = 0.0;
+		for(int j=0; j<vverts; j++) {
+			float phi = v * 2.0 * M_PI;
+
+			Vector3 pos = torusvec(theta, phi, mainrad, ringrad);
+			Vector3 cent = torusvec(theta, phi, mainrad, 0.0);
+
+			*varr++ = pos;
+			*narr++ = (pos - cent) / ringrad;
+
+			Vector3 pprev = torusvec(theta - 0.1f, phi, mainrad, ringrad);
+			Vector3 pnext = torusvec(theta + 0.1f, phi, mainrad, ringrad);
+
+			*tarr++ = (pnext - pprev).normalized();
 			*uvarr++ = Vector2(u * urange, v * vrange);
 
 			if(i < usub && j < vsub) {
@@ -394,8 +469,42 @@ void gen_heightmap(Mesh *mesh, float width, float height, int usub, int vsub, fl
 	}
 }
 
-// ----- heightmap ------
+// ----- box ------
+void gen_box(Mesh *mesh, float xsz, float ysz, float zsz, int usub, int vsub)
+{
+	static const float face_angles[][2] = {
+		{0, 0},
+		{M_PI / 2.0, 0},
+		{M_PI, 0},
+		{3.0 * M_PI / 2.0, 0},
+		{0, M_PI / 2.0},
+		{0, -M_PI / 2.0}
+	};
 
+	if(usub < 1) usub = 1;
+	if(vsub < 1) vsub = 1;
+
+	mesh->clear();
+
+	for(int i=0; i<6; i++) {
+		Matrix4x4 xform, dir_xform;
+		Mesh m;
+
+		gen_plane(&m, 1, 1, usub, vsub);
+		xform.rotate(Vector3(face_angles[i][1], face_angles[i][0], 0));
+		dir_xform = xform;
+		xform.translate(Vector3(0, 0, 0.5));
+		m.apply_xform(xform, dir_xform);
+
+		mesh->append(m);
+	}
+
+	Matrix4x4 scale;
+	scale.set_scaling(Vector3(xsz, ysz, zsz));
+	mesh->apply_xform(scale, Matrix4x4::identity);
+}
+
+/*
 void gen_box(Mesh *mesh, float xsz, float ysz, float zsz)
 {
 	mesh->clear();
@@ -485,6 +594,7 @@ void gen_box(Mesh *mesh, float xsz, float ysz, float zsz)
 		}
 	}
 }
+*/
 
 static inline Vector3 rev_vert(float u, float v, Vector2 (*rf)(float, float, void*), void *cls)
 {
@@ -556,6 +666,90 @@ void gen_revol(Mesh *mesh, int usub, int vsub, Vector2 (*rfunc)(float, float, vo
 
 				normal = cross_product(tang, bitan);
 			}
+
+			*varr++ = pos;
+			*narr++ = normal.normalized();
+			*tarr++ = tang.normalized();
+			*uvarr++ = Vector2(u, v);
+
+			if(i < usub && j < vsub) {
+				int idx = i * vverts + j;
+
+				*idxarr++ = idx;
+				*idxarr++ = idx + vverts + 1;
+				*idxarr++ = idx + 1;
+
+				*idxarr++ = idx;
+				*idxarr++ = idx + vverts;
+				*idxarr++ = idx + vverts + 1;
+			}
+
+			v += dv;
+		}
+		u += du;
+	}
+}
+
+
+static inline Vector3 sweep_vert(float u, float v, float height, Vector2 (*sf)(float, float, void*), void *cls)
+{
+	Vector2 pos = sf(u, v, cls);
+
+	float x = pos.x;
+	float y = v * height;
+	float z = pos.y;
+
+	return Vector3(x, y, z);
+}
+
+// ---- sweep shape along a path ----
+void gen_sweep(Mesh *mesh, float height, int usub, int vsub, Vector2 (*sfunc)(float, float, void*), void *cls)
+{
+	if(!sfunc) return;
+	if(usub < 3) usub = 3;
+	if(vsub < 1) vsub = 1;
+
+	mesh->clear();
+
+	int uverts = usub + 1;
+	int vverts = vsub + 1;
+	int num_verts = uverts * vverts;
+
+	int num_quads = usub * vsub;
+	int num_tri = num_quads * 2;
+
+	Vector3 *varr = (Vector3*)mesh->set_attrib_data(MESH_ATTR_VERTEX, 3, num_verts, 0);
+	Vector3 *narr = (Vector3*)mesh->set_attrib_data(MESH_ATTR_NORMAL, 3, num_verts, 0);
+	Vector3 *tarr = (Vector3*)mesh->set_attrib_data(MESH_ATTR_TANGENT, 3, num_verts, 0);
+	Vector2 *uvarr = (Vector2*)mesh->set_attrib_data(MESH_ATTR_TEXCOORD, 2, num_verts, 0);
+	unsigned int *idxarr = mesh->set_index_data(num_tri * 3, 0);
+
+	float du = 1.0 / (float)(uverts - 1);
+	float dv = 1.0 / (float)(vverts - 1);
+
+	float u = 0.0;
+	for(int i=0; i<uverts; i++) {
+		float v = 0.0;
+		for(int j=0; j<vverts; j++) {
+			Vector3 pos = sweep_vert(u, v, height, sfunc, cls);
+
+			Vector3 nextu = sweep_vert(fmod(u + du, 1.0), v, height, sfunc, cls);
+			Vector3 tang = nextu - pos;
+			if(tang.length_sq() < 1e-6) {
+				float new_v = v > 0.5 ? v - dv * 0.25 : v + dv * 0.25;
+				nextu = sweep_vert(fmod(u + du, 1.0), new_v, height, sfunc, cls);
+				tang = nextu - pos;
+			}
+
+			Vector3 normal;
+			Vector3 nextv = sweep_vert(u, v + dv, height, sfunc, cls);
+			Vector3 bitan = nextv - pos;
+			if(bitan.length_sq() < 1e-6) {
+				nextv = sweep_vert(u, v - dv, height, sfunc, cls);
+				bitan = pos - nextv;
+			}
+
+			normal = cross_product(tang, bitan);
 
 			*varr++ = pos;
 			*narr++ = normal.normalized();
