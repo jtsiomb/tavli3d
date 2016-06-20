@@ -7,7 +7,7 @@ dep = $(obj:.o=.d)
 
 bin = tavli
 
-inc = -Ilibs
+inc = -Ilibs -Ilibs/imago
 CFLAGS = -pedantic -Wall -g $(inc)
 CXXFLAGS = -pedantic -Wall -g $(inc)
 LDFLAGS = $(libgl) -lm -lpthread -ldl -lpng -ljpeg -lz
