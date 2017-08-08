@@ -1,16 +1,15 @@
 PREFIX ?= /usr/local
 
-src = $(wildcard src/*.cc) $(wildcard libs/vmath/*.cc)
-csrc = $(wildcard src/*.c) $(wildcard libs/vmath/*.c) $(wildcard libs/imago/*.c)
+src = $(wildcard src/*.cc)
+csrc = $(wildcard src/*.c)
 obj = $(src:.cc=.o) $(csrc:.c=.o)
 dep = $(obj:.o=.d)
 
 bin = tavli
 
-inc = -Ilibs -Ilibs/imago
-CFLAGS = -pedantic -Wall -g $(inc)
-CXXFLAGS = -pedantic -Wall -g $(inc)
-LDFLAGS = $(libgl) -lm -lpthread -ldl -lpng -ljpeg -lz
+CFLAGS = -pedantic -Wall -g
+CXXFLAGS = -pedantic -Wall -g
+LDFLAGS = $(libgl) -lm -lpthread -ldl -lpng -ljpeg -lz -lgmath -limago -ldrawtext -lvmath
 
 ifeq ($(shell uname -s), Darwin)
 	libgl = -framework OpenGL -framework GLUT -lGLEW

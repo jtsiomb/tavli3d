@@ -1,4 +1,5 @@
 #include <float.h>
+#include <gmath/gmath.h>
 #include "opengl.h"
 #include "board.h"
 #include "game.h"
@@ -24,7 +25,7 @@
 #define SLOT_HEIGHT		(VSIZE * 0.4)
 
 
-static const vec2_t piece_cp[] = {
+static const Vec2 piece_cp[] = {
 		{0, 0.25},
 		{1, 0.25},	// mid0
 		{2, 0.5},
@@ -39,7 +40,7 @@ static const vec2_t piece_cp[] = {
 };
 static const BezCurve piece_curve = {
 	sizeof piece_cp / sizeof *piece_cp,
-	(vec2_t*)piece_cp,
+	(Vec2*)piece_cp,
 	0.25 * PIECE_RAD
 };
 
@@ -73,7 +74,7 @@ Quad::Quad()
 {
 }
 
-Quad::Quad(const Vector3 &v0, const Vector3 &v1, const Vector3 &v2, const Vector3 &v3)
+Quad::Quad(const Vec3 &v0, const Vec3 &v1, const Vec3 &v2, const Vec3 &v3)
 	: tri0(v0, v1, v2), tri1(v0, v2, v3)
 {
 }
@@ -90,16 +91,16 @@ Board::Board()
 	clear();
 
 	for(int i=0; i<NUM_SLOTS; i++) {
-		Vector3 p = piece_pos(i, 0);
+		Vec3 p = piece_pos(i, 0);
 		bool top_side = i >= NUM_SLOTS / 2;
 
 		float z0 = top_side ? -PIECE_RAD : PIECE_RAD;
 		float z1 = top_side ? SLOT_HEIGHT : -SLOT_HEIGHT;
 
-		slotbb[i] = Quad(p + Vector3(-SLOT_WIDTH / 2.0, 0, z0),
-				p + Vector3(SLOT_WIDTH / 2.0, 0, z0),
-				p + Vector3(SLOT_WIDTH / 2.0, 0, z1),
-				p + Vector3(-SLOT_WIDTH / 2.0, 0, z1));
+		slotbb[i] = Quad(p + Vec3(-SLOT_WIDTH / 2.0, 0, z0),
+				p + Vec3(SLOT_WIDTH / 2.0, 0, z0),
+				p + Vec3(SLOT_WIDTH / 2.0, 0, z1),
+				p + Vec3(-SLOT_WIDTH / 2.0, 0, z1));
 	}
 }
 
@@ -204,13 +205,13 @@ bool Board::move_piece(int id, int slot, bool anim)
 	return true;
 }
 
-Vector3 Board::piece_pos(int slot, int level) const
+Vec3 Board::piece_pos(int slot, int level) const
 {
 	int top_side = slot / 10;
 	int sidx = (top_side ? (19 - slot) : slot) % 5;
 	int left_side = (top_side ? (19 - slot) : slot) / 5;
 
-	Vector3 pos;
+	Vec3 pos;
 
 	if(left_side) {
 		pos.x = -(sidx * HSIZE / 5.0 + BOARD_OFFSET - HSIZE / 2.0) - PIECE_RAD;
@@ -297,9 +298,9 @@ void Board::draw() const
 	}
 
 	for(int i=0; i<MAX_PIECES; i++) {
-		Vector3 pos;
+		Vec3 pos;
 		if(pieces + i == grabbed_piece) {
-			Plane p = Plane(Vector3(0, 1, 0), WALL_HEIGHT * 2.0);
+			Plane p = Plane(Vec3(0, 1, 0), WALL_HEIGHT * 2.0);
 			HitPoint hit;
 			if(p.intersect(pick_ray, &hit)) {
 				pos = hit.pos;
@@ -307,7 +308,7 @@ void Board::draw() const
 		} else {
 			pos = piece_pos(pieces[i].slot, pieces[i].level);
 		}
-		piece_obj->xform().set_translation(pos);
+		piece_obj->xform().translation(pos);
 		piece_obj->mtl.diffuse = opt.piece_color[pieces[i].owner];
 		piece_obj->set_shader(piece_sdr);
 		piece_obj->draw();
@@ -368,9 +369,9 @@ void Board::draw() const
 				if(pieces + i == grabbed_piece) {
 					continue;	// skip highlighting the grabbed piece (if any)
 				}
-				Vector3 pos = piece_pos(pieces[i].slot, pieces[i].level);
-				piece_obj->xform().set_translation(pos);
-				piece_obj->xform().scale(Vector3(1.05, 1.05, 1.05));
+				Vec3 pos = piece_pos(pieces[i].slot, pieces[i].level);
+				piece_obj->xform().scaling(Vec3(1.05, 1.05, 1.05));
+				piece_obj->xform().translate(pos);
 				piece_obj->set_shader(0);
 				piece_obj->draw();
 			}
@@ -387,7 +388,7 @@ bool Board::generate()
 	static const float board_spec = 0.4;
 
 	Mesh tmp;
-	Matrix4x4 xform;
+	Mat4 xform;
 
 	obj.clear();
 
@@ -397,40 +398,40 @@ bool Board::generate()
 		// generate bottom
 		Mesh *bottom = new Mesh;
 		gen_box(bottom, HSIZE, BOT_THICKNESS, HSIZE * 2.0);
-		xform.set_translation(Vector3(0, -BOT_THICKNESS / 2.0, 0));
+		xform.translation(Vec3(0, -BOT_THICKNESS / 2.0, 0));
 		bottom->apply_xform(xform);
 
 		Object *obottom = new Object;
 		obottom->set_mesh(bottom);
-		obottom->xform().set_translation(Vector3(sign * BOARD_OFFSET, 0, 0));
+		obottom->xform().translation(Vec3(sign * BOARD_OFFSET, 0, 0));
 		obottom->set_texture(img_field.texture());
-		obottom->mtl.specular = Vector3(board_spec, board_spec, board_spec);
+		obottom->mtl.specular = Vec3(board_spec, board_spec, board_spec);
 		obj.push_back(obottom);
 
 
 		// generate the 4 sides
 		Mesh *sides = new Mesh;
 		gen_box(sides, WALL_THICKNESS, WALL_HEIGHT, VSIZE + WALL_THICKNESS * 2);
-		xform.set_translation(Vector3(-(HSIZE + WALL_THICKNESS) / 2.0,
+		xform.translation(Vec3(-(HSIZE + WALL_THICKNESS) / 2.0,
 					WALL_HEIGHT / 2.0 - BOT_THICKNESS, 0));
 		sides->apply_xform(xform);
 
 		gen_box(&tmp, WALL_THICKNESS, WALL_HEIGHT, VSIZE + WALL_THICKNESS * 2);
-		xform.set_translation(Vector3((HSIZE + WALL_THICKNESS) / 2.0,
+		xform.translation(Vec3((HSIZE + WALL_THICKNESS) / 2.0,
 					WALL_HEIGHT / 2.0 - BOT_THICKNESS, 0));
 		tmp.apply_xform(xform);
 		sides->append(tmp);
 		tmp.clear();
 
 		gen_box(&tmp, HSIZE, WALL_HEIGHT, WALL_THICKNESS);
-		xform.set_translation(Vector3(0, WALL_HEIGHT / 2.0 - BOT_THICKNESS,
+		xform.translation(Vec3(0, WALL_HEIGHT / 2.0 - BOT_THICKNESS,
 					(VSIZE + WALL_THICKNESS) / 2.0));
 		tmp.apply_xform(xform);
 		sides->append(tmp);
 		tmp.clear();
 
 		gen_box(&tmp, HSIZE, WALL_HEIGHT, WALL_THICKNESS);
-		xform.set_translation(Vector3(0, WALL_HEIGHT / 2.0 - BOT_THICKNESS,
+		xform.translation(Vec3(0, WALL_HEIGHT / 2.0 - BOT_THICKNESS,
 					-(VSIZE + WALL_THICKNESS) / 2.0));
 		tmp.apply_xform(xform);
 		sides->append(tmp);
@@ -443,9 +444,9 @@ bool Board::generate()
 		osides->set_mesh(sides);
 		osides->xform() = obottom->xform();
 		osides->set_texture(img_wood.texture());
-		osides->tex_xform().set_scaling(Vector3(2, 2, 2));
-		osides->tex_xform().rotate(-Vector3(1, 0, 0.5), M_PI / 4.0);
-		osides->mtl.specular = Vector3(board_spec, board_spec, board_spec);
+		osides->tex_xform().rotation(M_PI / 4.0, -Vec3(1, 0, 0.5));
+		osides->tex_xform().scale(Vec3(2, 2, 2));
+		osides->mtl.specular = Vec3(board_spec, board_spec, board_spec);
 		obj.push_back(osides);
 
 	}
@@ -458,9 +459,9 @@ bool Board::generate()
 
 		// barrel
 		gen_cylinder(&tmp, HINGE_RAD, HINGE_HEIGHT, 8, 1, 1);
-		xform.reset_identity();
-		xform.translate(Vector3(0, WALL_HEIGHT - HINGE_RAD * 0.5, sign * VSIZE / 4.0));
-		xform.rotate(Vector3(-M_PI / 2.0, 0, 0));
+		xform = Mat4::identity;
+		xform.rotate(Vec3(-M_PI / 2.0, 0, 0));
+		xform.translate(Vec3(0, WALL_HEIGHT - HINGE_RAD * 0.5, sign * VSIZE / 4.0));
 		tmp.apply_xform(xform);
 		hinges->append(tmp);
 
@@ -468,26 +469,26 @@ bool Board::generate()
 		gen_plane(&tmp, HINGE_HEIGHT * 0.6, HINGE_HEIGHT * 0.8);
 		tmp.apply_xform(xform);
 
-		Matrix4x4 tex_xform;
-		tex_xform.set_rotation(Vector3(0, 0, M_PI / 2.0));
+		Mat4 tex_xform;
+		tex_xform.rotation(Vec3(0, 0, M_PI / 2.0));
 		tmp.texcoord_apply_xform(tex_xform);
 		hinges->append(tmp);
 
 		// studs
 		for(int j=0; j<4; j++) {
-			Vector3 pos;
+			Vec3 pos;
 
 			pos.x = (float)((j & 1) * 2 - 1) * HINGE_HEIGHT * 0.2;
 			pos.y = (float)((j & 2) - 1) * HINGE_HEIGHT * 0.3;
 
-			Matrix4x4 stud_xform = xform;
-			stud_xform.translate(pos);
+			Mat4 stud_xform = xform;
+			stud_xform.pre_translate(pos);
 
-			Matrix4x4 squash;
-			squash.set_scaling(Vector3(1, 1, 0.5));
+			Mat4 squash;
+			squash.scaling(Vec3(1, 1, 0.5));
 
 			gen_sphere(&tmp, HINGE_RAD * 0.5, 8, 4);
-			tmp.apply_xform(stud_xform * squash);
+			tmp.apply_xform(squash * stud_xform);
 			hinges->append(tmp);
 		}
 	}
@@ -501,13 +502,13 @@ bool Board::generate()
 	/*
 	Mesh *dbgmesh = new Mesh;
 	gen_box(dbgmesh, 0.5, 0.5, 0.5);
-	xform.set_translation(Vector3(0, 0.4, 0));
-	xform.set_scaling(Vector3(1, 1, 1));
+	xform.translation(Vec3(0, 0.4, 0));
+	xform.scaling(Vec3(1, 1, 1));
 	dbgmesh->apply_xform(xform);
 	Object *dbgobj = new Object;
 	dbgobj->set_mesh(dbgmesh);
 	dbgobj->set_texture(img_hinge.texture());
-	//dbgobj->tex_xform().set_scaling(Vector3(3, 3, 3));
+	//dbgobj->tex_xform().scaling(Vec3(3, 3, 3));
 	obj.push_back(dbgobj);
 	*/
 
@@ -516,9 +517,9 @@ bool Board::generate()
 
 	Object *opiece = new Object;
 	opiece->set_mesh(piece);
-	opiece->mtl.diffuse = Vector3(0.6, 0.6, 0.6);
-	opiece->mtl.specular = Vector3(0.8, 0.8, 0.8);
-	opiece->xform().set_translation(Vector3(0, 0.2, 0));
+	opiece->mtl.diffuse = Vec3(0.6, 0.6, 0.6);
+	opiece->mtl.specular = Vec3(0.8, 0.8, 0.8);
+	opiece->xform().translation(Vec3(0, 0.2, 0));
 	//obj.push_back(opiece);
 
 	piece_obj = opiece;
@@ -543,8 +544,8 @@ static float wood(float x, float y)
 	x *= 10.0;
 	y *= 20.0;
 
-	float len = sqrt(x * x + y * y) + turbulence2(u * 6.0, v * 12.0, 2) * 1.2 +
-		turbulence2(u * 0.5, v, 2) * 15.0;
+	float len = sqrt(x * x + y * y) + turbulence(u * 6.0, v * 12.0, 2) * 1.2 +
+		turbulence(u * 0.5, v, 2) * 15.0;
 	float val = fmod(len, 1.0);
 
 	//val = val * 0.5 + 0.5;
@@ -609,9 +610,9 @@ static bool field_pattern(float x, float y)
 bool Board::generate_textures()
 {
 	// ---- board field texture ----
-	static const Vector3 wcol1 = Vector3(0.6, 0.4, 0.2);
-	static const Vector3 wcol2 = Vector3(0.53, 0.32, 0.1);
-	static const Vector3 wcol3 = Vector3(0.38, 0.25, 0.08);
+	static const Vec3 wcol1 = Vec3(0.6, 0.4, 0.2);
+	static const Vec3 wcol2 = Vec3(0.53, 0.32, 0.1);
+	static const Vec3 wcol3 = Vec3(0.38, 0.25, 0.08);
 
 	img_field.create(1024, 1024);
 	unsigned char *pptr = img_field.pixels;
@@ -625,7 +626,7 @@ bool Board::generate_textures()
 			bool inside = field_pattern(u, v);
 
 			float wood_val = wood(u, v);
-			Vector3 wood_color = lerp(wcol1, wcol2, wood_val) * 0.9;
+			Vec3 wood_color = lerp(wcol1, wcol2, wood_val) * 0.9;
 			if(inside) {
 				wood_color = lerp(wcol1, wcol2, 1.0 - wood_val) * 2.0;
 			}
@@ -676,7 +677,7 @@ bool Board::generate_textures()
 			float u = (float)j / (float)img_wood.width;
 
 			float wood_val = wood_tile(u, v);
-			Vector3 wood_color = lerp(wcol2, wcol3, wood_val) * 0.7;
+			Vec3 wood_color = lerp(wcol2, wcol3, wood_val) * 0.7;
 
 			int r = (int)(wood_color.x * 255.0);
 			int g = (int)(wood_color.y * 255.0);
@@ -692,8 +693,8 @@ bool Board::generate_textures()
 	img_wood.texture();
 
 	// ---- metal hinge diffuse texture ----
-	Vector3 rusty_col1 = Vector3(0.43, 0.46, 0.52);
-	Vector3 rusty_col2 = Vector3(0.52, 0.47, 0.43);
+	Vec3 rusty_col1 = Vec3(0.43, 0.46, 0.52);
+	Vec3 rusty_col2 = Vec3(0.52, 0.47, 0.43);
 
 	img_hinge.create(128, 128);
 	pptr = img_hinge.pixels;
@@ -703,9 +704,9 @@ bool Board::generate_textures()
 			float u = (float)j / (float)img_hinge.width;
 
 			// rust pattern
-			float w1 = fbm2(u * 4.0, v * 4.0, 3) * 0.5 + 0.5;
+			float w1 = fbm(u * 4.0, v * 4.0, 3) * 0.5 + 0.5;
 			//float w2 = fbm2(u * 8.0, v * 8.0, 1) * 0.5 + 0.5;
-			Vector3 col = lerp(rusty_col1, rusty_col2 * 0.5, w1);
+			Vec3 col = lerp(rusty_col1, rusty_col2 * 0.5, w1);
 
 			// center hinge split
 			if(fabs(v - 0.5) < 0.01) {

@@ -12,7 +12,7 @@ static void draw_scene();
 static void draw_backdrop();
 
 int win_width, win_height;
-unsigned long cur_time;
+long cur_time;
 unsigned int sdr_phong, sdr_phong_notex;
 unsigned int sdr_shadow, sdr_shadow_notex;
 unsigned int sdr_unlit;
@@ -118,7 +118,7 @@ void game_display()
 	glLightfv(GL_LIGHT0, GL_POSITION, lpos);
 
 	if(opt.shadows && sdr_shadow) {
-		begin_shadow_pass(Vector3(lpos[0], lpos[1], lpos[2]), Vector3(0, 0, 0), 4.5);
+		begin_shadow_pass(Vec3(lpos[0], lpos[1], lpos[2]), Vec3(0, 0, 0), 4.5);
 		draw_scene();
 		end_shadow_pass();
 
@@ -126,8 +126,8 @@ void game_display()
 		glBindTexture(GL_TEXTURE_2D, get_shadow_tex());
 
 		glMatrixMode(GL_TEXTURE);
-		Matrix4x4 shadow_matrix = get_shadow_matrix();
-		glLoadTransposeMatrixf(shadow_matrix[0]);
+		Mat4 shadow_matrix = get_shadow_matrix();
+		glLoadMatrixf(shadow_matrix[0]);
 
 		glActiveTexture(GL_TEXTURE0);
 		glMatrixMode(GL_MODELVIEW);
@@ -347,9 +347,9 @@ void game_mmotion(int x, int y)
 	ysz = vp[3] - vp[1];
 
 	gluUnProject(x, ysz - y, 0, viewmat, projmat, vp, &px, &py, &pz);
-	pick_ray.origin = Vector3(px, py, pz);
+	pick_ray.origin = Vec3(px, py, pz);
 	gluUnProject(x, ysz - y, 1, viewmat, projmat, vp, &px, &py, &pz);
-	pick_ray.dir = Vector3(px, py, pz) - pick_ray.origin;
+	pick_ray.dir = Vec3(px, py, pz) - pick_ray.origin;
 
 	board.select_slot(board.slot_hit(pick_ray));
 

@@ -3,22 +3,22 @@
 
 #include <vector>
 #include "object.h"
-#include "vmath/vmath.h"
+#include <gmath/gmath.h>
 #include "geom.h"
 
 class SceneNode {
 private:
-	Vector3 pos;
-	Quaternion rot;
-	Vector3 scale;
+	Vec3 pos;
+	Quat rot;
+	Vec3 scale;
 
 	std::vector<Object*> obj;
 
 	SceneNode *parent;
 	std::vector<SceneNode*> children;
 
-	Matrix4x4 xform;
-	Matrix4x4 inv_xform;
+	Mat4 xform;
+	Mat4 inv_xform;
 
 public:
 	SceneNode();
@@ -36,20 +36,20 @@ public:
 	int get_num_objects() const;
 	Object *get_object(int idx) const;
 
-	void set_position(const Vector3 &pos);
-	void set_rotation(const Quaternion &rot);
-	void set_scaling(const Vector3 &scale);
+	void set_position(const Vec3 &pos);
+	void set_rotation(const Quat &rot);
+	void set_scaling(const Vec3 &scale);
 
-	const Vector3 &get_node_position() const;
-	const Quaternion &get_node_rotation() const;
-	const Vector3 &get_node_scaling() const;
+	const Vec3 &get_node_position() const;
+	const Quat &get_node_rotation() const;
+	const Vec3 &get_node_scaling() const;
 
-	Vector3 get_position() const;
-	Quaternion get_rotation() const;
-	Vector3 get_scaling() const;
+	Vec3 get_position() const;
+	Quat get_rotation() const;
+	Vec3 get_scaling() const;
 
-	const Matrix4x4 &get_matrix() const;
-	const Matrix4x4 &get_inv_matrix() const;
+	const Mat4 &get_matrix() const;
+	const Mat4 &get_inv_matrix() const;
 
 	void update_node(long msec = 0);
 	void update(long msec = 0);

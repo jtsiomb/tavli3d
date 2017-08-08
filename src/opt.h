@@ -1,7 +1,7 @@
 #ifndef OPT_H_
 #define OPT_H_
 
-#include "vmath/vmath.h"
+#include <gmath/gmath.h>
 
 struct Options {
 	int xres, yres;
@@ -10,7 +10,7 @@ struct Options {
 
 	char *def_username, *saved_passwd;
 
-	vec3_t piece_color[2];
+	Vec3 piece_color[2];
 };
 
 extern Options opt;

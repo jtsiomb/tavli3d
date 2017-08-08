@@ -15,8 +15,8 @@ bool init_options(int argc, char **argv)
 
 	opt.def_username = opt.saved_passwd = 0;
 
-	opt.piece_color[0] = v3_cons(0.3, 0.35, 0.6);
-	opt.piece_color[1] = v3_cons(1.0, 0.75, 0.5);
+	opt.piece_color[0] = Vec3(0.3, 0.35, 0.6);
+	opt.piece_color[1] = Vec3(1.0, 0.75, 0.5);
 
 	return true;
 }

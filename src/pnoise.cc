@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include "pnoise.h"
-#include "vmath/vmath.h"
+#include <gmath/gmath.h>
 
 #define B	0x100
 #define BM	0xff
@@ -28,7 +28,7 @@
 	} while(0)
 
 static int perm[B + B + 2];
-static vec2_t grad2[B + B + 2];
+static Vec2 grad2[B + B + 2];
 static bool tables_valid;
 
 static void init_noise()
@@ -38,7 +38,7 @@ static void init_noise()
 
 		grad2[i].x = (float)((rand() % (B + B)) - B) / B;
 		grad2[i].y = (float)((rand() % (B + B)) - B) / B;
-		grad2[i] = v2_normalize(grad2[i]);
+		grad2[i] = normalize(grad2[i]);
 	}
 
 	for(int i=0; i<B; i++) {
@@ -80,10 +80,10 @@ float dbg_noise2(float x, float y)
 	float sx = s_curve(rx0);
 	float sy = s_curve(ry0);
 
-	vec2_t g00 = grad2[b00];
-	vec2_t g10 = grad2[b10];
-	vec2_t g01 = grad2[b01];
-	vec2_t g11 = grad2[b11];
+	Vec2 g00 = grad2[b00];
+	Vec2 g10 = grad2[b10];
+	Vec2 g01 = grad2[b01];
+	Vec2 g11 = grad2[b11];
 
 	float u = g00.x * rx0 + g00.y * ry0;
 	float v = g10.x * rx1 + g10.y * ry0;
@@ -119,10 +119,10 @@ float pnoise2(float x, float y, int periodx, int periody)
 	float sx = s_curve(rx0);
 	float sy = s_curve(ry0);
 
-	vec2_t g00 = grad2[b00];
-	vec2_t g10 = grad2[b10];
-	vec2_t g01 = grad2[b01];
-	vec2_t g11 = grad2[b11];
+	Vec2 g00 = grad2[b00];
+	Vec2 g10 = grad2[b10];
+	Vec2 g01 = grad2[b01];
+	Vec2 g11 = grad2[b11];
 
 	float u = g00.x * rx0 + g00.y * ry0;
 	float v = g10.x * rx1 + g10.y * ry0;

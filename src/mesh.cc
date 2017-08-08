@@ -4,20 +4,13 @@
 #include <assert.h>
 #include "opengl.h"
 #include "mesh.h"
+#include "logger.h"
 //#include "xform_node.h"
 
 #define USE_OLDGL
 
 bool Mesh::use_custom_sdr_attr = true;
-int Mesh::global_sdr_loc[NUM_MESH_ATTR] = { 0, 1, 2, 3, 4, 5, 6 };
-/*
-	(int)SDR_ATTR_VERTEX,
-	(int)SDR_ATTR_NORMAL,
-	(int)SDR_ATTR_TANGENT,
-	(int)SDR_ATTR_TEXCOORD,
-	(int)SDR_ATTR_COLOR,
-	-1, -1};
-*/
+int Mesh::global_sdr_loc[NUM_MESH_ATTR] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 unsigned int Mesh::intersect_mode = ISECT_DEFAULT;
 float Mesh::vertex_sel_dist = 0.01;
 float Mesh::vis_vecsize = 1.0;
@@ -162,12 +155,12 @@ void Mesh::clear()
 float *Mesh::set_attrib_data(int attrib, int nelem, unsigned int num, const float *data)
 {
 	if(attrib < 0 || attrib >= NUM_MESH_ATTR) {
-		fprintf(stderr, "%s: invalid attrib: %d\n", __FUNCTION__, attrib);
+		error_log("%s: invalid attrib: %d\n", __FUNCTION__, attrib);
 		return 0;
 	}
 
 	if(nverts && num != nverts) {
-		fprintf(stderr, "%s: attribute count missmatch (%d instead of %d)\n", __FUNCTION__, num, nverts);
+		error_log("%s: attribute count missmatch (%d instead of %d)\n", __FUNCTION__, num, nverts);
 		return 0;
 	}
 	nverts = num;
@@ -188,7 +181,7 @@ float *Mesh::set_attrib_data(int attrib, int nelem, unsigned int num, const floa
 float *Mesh::get_attrib_data(int attrib)
 {
 	if(attrib < 0 || attrib >= NUM_MESH_ATTR) {
-		fprintf(stderr, "%s: invalid attrib: %d\n", __FUNCTION__, attrib);
+		error_log("%s: invalid attrib: %d\n", __FUNCTION__, attrib);
 		return 0;
 	}
 
@@ -199,17 +192,17 @@ float *Mesh::get_attrib_data(int attrib)
 const float *Mesh::get_attrib_data(int attrib) const
 {
 	if(attrib < 0 || attrib >= NUM_MESH_ATTR) {
-		fprintf(stderr, "%s: invalid attrib: %d\n", __FUNCTION__, attrib);
+		error_log("%s: invalid attrib: %d\n", __FUNCTION__, attrib);
 		return 0;
 	}
 
 	if(!vattr[attrib].data_valid) {
 #if GL_ES_VERSION_2_0
-		fprintf(stderr, "%s: can't read back attrib data on CrippledGL ES\n", __FUNCTION__);
+		error_log("%s: can't read back attrib data on CrippledGL ES\n", __FUNCTION__);
 		return 0;
 #else
 		if(!vattr[attrib].vbo_valid) {
-			fprintf(stderr, "%s: unavailable attrib: %d\n", __FUNCTION__, attrib);
+			error_log("%s: unavailable attrib: %d\n", __FUNCTION__, attrib);
 			return 0;
 		}
 
@@ -229,7 +222,7 @@ const float *Mesh::get_attrib_data(int attrib) const
 	return &vattr[attrib].data[0];
 }
 
-void Mesh::set_attrib(int attrib, int idx, const Vector4 &v)
+void Mesh::set_attrib(int attrib, int idx, const Vec4 &v)
 {
 	float *data = get_attrib_data(attrib);
 	if(data) {
@@ -240,9 +233,9 @@ void Mesh::set_attrib(int attrib, int idx, const Vector4 &v)
 	}
 }
 
-Vector4 Mesh::get_attrib(int attrib, int idx) const
+Vec4 Mesh::get_attrib(int attrib, int idx) const
 {
-	Vector4 v(0.0, 0.0, 0.0, 1.0);
+	Vec4 v(0.0, 0.0, 0.0, 1.0);
 	const float *data = get_attrib_data(attrib);
 	if(data) {
 		data += idx * vattr[attrib].nelem;
@@ -263,7 +256,7 @@ unsigned int *Mesh::set_index_data(int num, const unsigned int *indices)
 {
 	int nidx = nfaces * 3;
 	if(nidx && num != nidx) {
-		fprintf(stderr, "%s: index count missmatch (%d instead of %d)\n", __FUNCTION__, num, nidx);
+		error_log("%s: index count mismatch (%d instead of %d)\n", __FUNCTION__, num, nidx);
 		return 0;
 	}
 	nfaces = num / 3;
@@ -291,11 +284,11 @@ const unsigned int *Mesh::get_index_data() const
 {
 	if(!idata_valid) {
 #if GL_ES_VERSION_2_0
-		fprintf(stderr, "%s: can't read back index data in CrippledGL ES\n", __FUNCTION__);
+		error_log("%s: can't read back index data in CrippledGL ES\n", __FUNCTION__);
 		return 0;
 #else
 		if(!ibo_valid) {
-			fprintf(stderr, "%s: indices unavailable\n", __FUNCTION__);
+			error_log("%s: indices unavailable\n", __FUNCTION__);
 			return 0;
 		}
 
@@ -368,7 +361,7 @@ void Mesh::append(const Mesh &mesh)
 // assemble a complete vertex by adding all the useful attributes
 void Mesh::vertex(float x, float y, float z)
 {
-	cur_val[MESH_ATTR_VERTEX] = Vector4(x, y, z, 1.0f);
+	cur_val[MESH_ATTR_VERTEX] = Vec4(x, y, z, 1.0f);
 	vattr[MESH_ATTR_VERTEX].data_valid = true;
 	vattr[MESH_ATTR_VERTEX].nelem = 3;
 
@@ -389,35 +382,35 @@ void Mesh::vertex(float x, float y, float z)
 
 void Mesh::normal(float nx, float ny, float nz)
 {
-	cur_val[MESH_ATTR_NORMAL] = Vector4(nx, ny, nz, 1.0f);
+	cur_val[MESH_ATTR_NORMAL] = Vec4(nx, ny, nz, 1.0f);
 	vattr[MESH_ATTR_NORMAL].data_valid = true;
 	vattr[MESH_ATTR_NORMAL].nelem = 3;
 }
 
 void Mesh::tangent(float tx, float ty, float tz)
 {
-	cur_val[MESH_ATTR_TANGENT] = Vector4(tx, ty, tz, 1.0f);
+	cur_val[MESH_ATTR_TANGENT] = Vec4(tx, ty, tz, 1.0f);
 	vattr[MESH_ATTR_TANGENT].data_valid = true;
 	vattr[MESH_ATTR_TANGENT].nelem = 3;
 }
 
 void Mesh::texcoord(float u, float v, float w)
 {
-	cur_val[MESH_ATTR_TEXCOORD] = Vector4(u, v, w, 1.0f);
+	cur_val[MESH_ATTR_TEXCOORD] = Vec4(u, v, w, 1.0f);
 	vattr[MESH_ATTR_TEXCOORD].data_valid = true;
 	vattr[MESH_ATTR_TEXCOORD].nelem = 3;
 }
 
 void Mesh::boneweights(float w1, float w2, float w3, float w4)
 {
-	cur_val[MESH_ATTR_BONEWEIGHTS] = Vector4(w1, w2, w3, w4);
+	cur_val[MESH_ATTR_BONEWEIGHTS] = Vec4(w1, w2, w3, w4);
 	vattr[MESH_ATTR_BONEWEIGHTS].data_valid = true;
 	vattr[MESH_ATTR_BONEWEIGHTS].nelem = 4;
 }
 
 void Mesh::boneidx(int idx1, int idx2, int idx3, int idx4)
 {
-	cur_val[MESH_ATTR_BONEIDX] = Vector4(idx1, idx2, idx3, idx4);
+	cur_val[MESH_ATTR_BONEIDX] = Vec4(idx1, idx2, idx3, idx4);
 	vattr[MESH_ATTR_BONEIDX].data_valid = true;
 	vattr[MESH_ATTR_BONEIDX].nelem = 4;
 }
@@ -470,29 +463,25 @@ float Mesh::get_vis_vecsize()
 	return Mesh::vis_vecsize;
 }
 
-void Mesh::apply_xform(const Matrix4x4 &xform)
+void Mesh::apply_xform(const Mat4 &xform)
 {
-	Matrix4x4 dir_xform = xform;
-	dir_xform[0][3] = dir_xform[1][3] = dir_xform[2][3] = 0.0f;
-	dir_xform[3][0] = dir_xform[3][1] = dir_xform[3][2] = 0.0f;
-	dir_xform[3][3] = 1.0f;
-
+	Mat4 dir_xform = xform.upper3x3();
 	apply_xform(xform, dir_xform);
 }
 
-void Mesh::apply_xform(const Matrix4x4 &xform, const Matrix4x4 &dir_xform)
+void Mesh::apply_xform(const Mat4 &xform, const Mat4 &dir_xform)
 {
 	for(unsigned int i=0; i<nverts; i++) {
-		Vector4 v = get_attrib(MESH_ATTR_VERTEX, i);
-		set_attrib(MESH_ATTR_VERTEX, i, v.transformed(xform));
+		Vec4 v = get_attrib(MESH_ATTR_VERTEX, i);
+		set_attrib(MESH_ATTR_VERTEX, i, xform * v);
 
 		if(has_attrib(MESH_ATTR_NORMAL)) {
-			Vector3 n = get_attrib(MESH_ATTR_NORMAL, i);
-			set_attrib(MESH_ATTR_NORMAL, i, n.transformed(dir_xform));
+			Vec3 n = Vec3(get_attrib(MESH_ATTR_NORMAL, i));
+			set_attrib(MESH_ATTR_NORMAL, i, Vec4(dir_xform * n));
 		}
 		if(has_attrib(MESH_ATTR_TANGENT)) {
-			Vector3 t = get_attrib(MESH_ATTR_TANGENT, i);
-			set_attrib(MESH_ATTR_TANGENT, i, t.transformed(dir_xform));
+			Vec3 t = Vec3(get_attrib(MESH_ATTR_TANGENT, i));
+			set_attrib(MESH_ATTR_TANGENT, i, Vec4(dir_xform * t));
 		}
 	}
 }
@@ -517,12 +506,12 @@ void Mesh::flip_faces()
 		}
 
 	} else {
-		Vector3 *verts = (Vector3*)get_attrib_data(MESH_ATTR_VERTEX);
+		Vec3 *verts = (Vec3*)get_attrib_data(MESH_ATTR_VERTEX);
 		if(!verts) return;
 
 		int vnum = get_attrib_count(MESH_ATTR_VERTEX);
 		for(int i=0; i<vnum; i+=3) {
-			Vector3 tmp = verts[i + 2];
+			Vec3 tmp = verts[i + 2];
 			verts[i + 2] = verts[i + 1];
 			verts[i + 1] = tmp;
 		}
@@ -531,12 +520,85 @@ void Mesh::flip_faces()
 
 void Mesh::flip_normals()
 {
-	Vector3 *normals = (Vector3*)get_attrib_data(MESH_ATTR_NORMAL);
+	Vec3 *normals = (Vec3*)get_attrib_data(MESH_ATTR_NORMAL);
 	if(!normals) return;
 
 	int num = get_attrib_count(MESH_ATTR_NORMAL);
 	for(int i=0; i<num; i++) {
 		normals[i] = -normals[i];
+	}
+}
+
+void Mesh::explode()
+{
+	if(!is_indexed()) return;	// no vertex sharing is possible in unindexed meshes
+
+	unsigned int *indices = get_index_data();
+	assert(indices);
+
+	int idxnum = get_index_count();
+	int nnverts = idxnum;
+
+	nverts = nnverts;
+
+	for(int i=0; i<NUM_MESH_ATTR; i++) {
+		if(!has_attrib(i)) continue;
+
+		const float *srcbuf = get_attrib_data(i);
+
+		float *tmpbuf = new float[nnverts * vattr[i].nelem];
+		float *dstptr = tmpbuf;
+		for(int j=0; j<idxnum; j++) {
+			unsigned int idx = indices[j];
+			const float *srcptr = srcbuf + idx * vattr[i].nelem;
+
+			for(int k=0; k<vattr[i].nelem; k++) {
+				*dstptr++ = *srcptr++;
+			}
+		}
+		set_attrib_data(i, vattr[i].nelem, nnverts, tmpbuf);
+		delete [] tmpbuf;
+	}
+
+	ibo_valid = false;
+	idata_valid = false;
+	idata.clear();
+
+	nfaces = idxnum / 3;
+}
+
+void Mesh::calc_face_normals()
+{
+	const Vec3 *varr = (Vec3*)get_attrib_data(MESH_ATTR_VERTEX);
+	Vec3 *narr = (Vec3*)get_attrib_data(MESH_ATTR_NORMAL);
+	if(!varr) {
+		return;
+	}
+
+	if(is_indexed()) {
+		const unsigned int *idxarr = get_index_data();
+
+		for(unsigned int i=0; i<nfaces; i++) {
+			Triangle face(i, varr, idxarr);
+			face.calc_normal();
+
+			for(int j=0; j<3; j++) {
+				unsigned int idx = *idxarr++;
+				narr[idx] = face.normal;
+			}
+		}
+	} else {
+		// non-indexed
+		int nfaces = nverts / 3;
+
+		for(int i=0; i<nfaces; i++) {
+			Triangle face(varr[0], varr[1], varr[2]);
+			face.calc_normal();
+
+			narr[0] = narr[1] = narr[2] = face.normal;
+			varr += vattr[MESH_ATTR_VERTEX].nelem;
+			narr += vattr[MESH_ATTR_NORMAL].nelem;
+		}
 	}
 }
 
@@ -565,21 +627,19 @@ int Mesh::get_bones_count() const
 bool Mesh::pre_draw() const
 {
 	cur_sdr = 0;
-	if(glcaps.shaders) {
-		glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
-	}
+	glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
 
 	((Mesh*)this)->update_buffers();
 
 	if(!vattr[MESH_ATTR_VERTEX].vbo_valid) {
-		fprintf(stderr, "%s: invalid vertex buffer\n", __FUNCTION__);
+		error_log("%s: invalid vertex buffer\n", __FUNCTION__);
 		return false;
 	}
 
 	if(cur_sdr && use_custom_sdr_attr) {
 		// rendering with shaders
 		if(global_sdr_loc[MESH_ATTR_VERTEX] == -1) {
-			fprintf(stderr, "%s: shader attribute location for vertices unset\n", __FUNCTION__);
+			error_log("%s: shader attribute location for vertices unset\n", __FUNCTION__);
 			return false;
 		}
 
@@ -612,6 +672,13 @@ bool Mesh::pre_draw() const
 			glBindBuffer(GL_ARRAY_BUFFER, vattr[MESH_ATTR_COLOR].vbo);
 			glColorPointer(vattr[MESH_ATTR_COLOR].nelem, GL_FLOAT, 0, 0);
 			glEnableClientState(GL_COLOR_ARRAY);
+		}
+		if(vattr[MESH_ATTR_TEXCOORD2].vbo_valid) {
+			glClientActiveTexture(GL_TEXTURE1);
+			glBindBuffer(GL_ARRAY_BUFFER, vattr[MESH_ATTR_TEXCOORD2].vbo);
+			glTexCoordPointer(vattr[MESH_ATTR_TEXCOORD2].nelem, GL_FLOAT, 0, 0);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			glClientActiveTexture(GL_TEXTURE0);
 		}
 #endif
 	}
@@ -658,6 +725,11 @@ void Mesh::post_draw() const
 		if(vattr[MESH_ATTR_COLOR].vbo_valid) {
 			glDisableClientState(GL_COLOR_ARRAY);
 		}
+		if(vattr[MESH_ATTR_TEXCOORD2].vbo_valid) {
+			glClientActiveTexture(GL_TEXTURE1);
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			glClientActiveTexture(GL_TEXTURE0);
+		}
 #endif
 	}
 }
@@ -668,8 +740,9 @@ void Mesh::draw_wire() const
 
 	((Mesh*)this)->update_wire_ibo();
 
+	int num_faces = get_poly_count();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wire_ibo);
-	glDrawElements(GL_LINES, nfaces * 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_LINES, num_faces * 6, GL_UNSIGNED_INT, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	post_draw();
@@ -688,12 +761,10 @@ void Mesh::draw_normals() const
 {
 #ifdef USE_OLDGL
 	int cur_sdr = 0;
-	if(glcaps.shaders) {
-		glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
-	}
+	glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
 
-	Vector3 *varr = (Vector3*)get_attrib_data(MESH_ATTR_VERTEX);
-	Vector3 *norm = (Vector3*)get_attrib_data(MESH_ATTR_NORMAL);
+	Vec3 *varr = (Vec3*)get_attrib_data(MESH_ATTR_VERTEX);
+	Vec3 *norm = (Vec3*)get_attrib_data(MESH_ATTR_NORMAL);
 	if(!varr || !norm) {
 		return;
 	}
@@ -708,13 +779,13 @@ void Mesh::draw_normals() const
 
 		for(size_t i=0; i<nverts; i++) {
 			glVertexAttrib3f(vert_loc, varr[i].x, varr[i].y, varr[i].z);
-			Vector3 end = varr[i] + norm[i] * vis_vecsize;
+			Vec3 end = varr[i] + norm[i] * vis_vecsize;
 			glVertexAttrib3f(vert_loc, end.x, end.y, end.z);
 		}
 	} else {
 		for(size_t i=0; i<nverts; i++) {
 			glVertex3f(varr[i].x, varr[i].y, varr[i].z);
-			Vector3 end = varr[i] + norm[i] * vis_vecsize;
+			Vec3 end = varr[i] + norm[i] * vis_vecsize;
 			glVertex3f(end.x, end.y, end.z);
 		}
 	}
@@ -726,12 +797,10 @@ void Mesh::draw_tangents() const
 {
 #ifdef USE_OLDGL
 	int cur_sdr = 0;
-	if(glcaps.shaders) {
-		glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
-	}
+	glGetIntegerv(GL_CURRENT_PROGRAM, &cur_sdr);
 
-	Vector3 *varr = (Vector3*)get_attrib_data(MESH_ATTR_VERTEX);
-	Vector3 *tang = (Vector3*)get_attrib_data(MESH_ATTR_TANGENT);
+	Vec3 *varr = (Vec3*)get_attrib_data(MESH_ATTR_VERTEX);
+	Vec3 *tang = (Vec3*)get_attrib_data(MESH_ATTR_TANGENT);
 	if(!varr || !tang) {
 		return;
 	}
@@ -746,13 +815,13 @@ void Mesh::draw_tangents() const
 
 		for(size_t i=0; i<nverts; i++) {
 			glVertexAttrib3f(vert_loc, varr[i].x, varr[i].y, varr[i].z);
-			Vector3 end = varr[i] + tang[i] * vis_vecsize;
+			Vec3 end = varr[i] + tang[i] * vis_vecsize;
 			glVertexAttrib3f(vert_loc, end.x, end.y, end.z);
 		}
 	} else {
 		for(size_t i=0; i<nverts; i++) {
 			glVertex3f(varr[i].x, varr[i].y, varr[i].z);
-			Vector3 end = varr[i] + tang[i] * vis_vecsize;
+			Vec3 end = varr[i] + tang[i] * vis_vecsize;
 			glVertex3f(end.x, end.y, end.z);
 		}
 	}
@@ -760,7 +829,7 @@ void Mesh::draw_tangents() const
 #endif	// USE_OLDGL
 }
 
-void Mesh::get_aabbox(Vector3 *vmin, Vector3 *vmax) const
+void Mesh::get_aabbox(Vec3 *vmin, Vec3 *vmax) const
 {
 	if(!aabb_valid) {
 		((Mesh*)this)->calc_aabb();
@@ -777,7 +846,7 @@ const AABox &Mesh::get_aabbox() const
 	return aabb;
 }
 
-float Mesh::get_bsphere(Vector3 *center, float *rad) const
+float Mesh::get_bsphere(Vec3 *center, float *rad) const
 {
 	if(!bsph_valid) {
 		((Mesh*)this)->calc_bsph();
@@ -823,8 +892,8 @@ bool Mesh::intersect(const Ray &ray, HitPoint *hit) const
 {
 	assert((Mesh::intersect_mode & (ISECT_VERTICES | ISECT_FACE)) != (ISECT_VERTICES | ISECT_FACE));
 
-	const Vector3 *varr = (Vector3*)get_attrib_data(MESH_ATTR_VERTEX);
-	const Vector3 *narr = (Vector3*)get_attrib_data(MESH_ATTR_NORMAL);
+	const Vec3 *varr = (Vec3*)get_attrib_data(MESH_ATTR_VERTEX);
+	const Vec3 *narr = (Vec3*)get_attrib_data(MESH_ATTR_NORMAL);
 	if(!varr) {
 		return false;
 	}
@@ -839,7 +908,7 @@ bool Mesh::intersect(const Ray &ray, HitPoint *hit) const
 
 	HitPoint nearest_hit;
 	nearest_hit.dist = FLT_MAX;
-	nearest_hit.obj = 0;
+	nearest_hit.data = 0;
 
 	if(Mesh::intersect_mode & ISECT_VERTICES) {
 		// we asked for "intersections" with the vertices of the mesh
@@ -848,15 +917,15 @@ bool Mesh::intersect(const Ray &ray, HitPoint *hit) const
 
 		for(unsigned int i=0; i<nverts; i++) {
 
-			if((Mesh::intersect_mode & ISECT_FRONT) && dot_product(narr[i], ray.dir) > 0) {
+			if((Mesh::intersect_mode & ISECT_FRONT) && dot(narr[i], ray.dir) > 0) {
 				continue;
 			}
 
 			// project the vertex onto the ray line
-			float t = dot_product(varr[i] - ray.origin, ray.dir);
-			Vector3 vproj = ray.origin + ray.dir * t;
+			float t = dot(varr[i] - ray.origin, ray.dir);
+			Vec3 vproj = ray.origin + ray.dir * t;
 
-			float dist_sq = (vproj - varr[i]).length_sq();
+			float dist_sq = length_sq(vproj - varr[i]);
 			if(dist_sq < thres_sq) {
 				if(!hit) {
 					return true;
@@ -870,7 +939,7 @@ bool Mesh::intersect(const Ray &ray, HitPoint *hit) const
 
 		if(nearest_vidx != -1) {
 			hitvert = varr[nearest_vidx];
-			nearest_hit.obj = &hitvert;
+			nearest_hit.data = &hitvert;
 		}
 
 	} else {
@@ -880,7 +949,7 @@ bool Mesh::intersect(const Ray &ray, HitPoint *hit) const
 			Triangle face(i, varr, idxarr);
 
 			// ignore back-facing polygons if the mode flags include ISECT_FRONT
-			if((Mesh::intersect_mode & ISECT_FRONT) && dot_product(face.get_normal(), ray.dir) > 0) {
+			if((Mesh::intersect_mode & ISECT_FRONT) && dot(face.get_normal(), ray.dir) > 0) {
 				continue;
 			}
 
@@ -897,17 +966,17 @@ bool Mesh::intersect(const Ray &ray, HitPoint *hit) const
 		}
 	}
 
-	if(nearest_hit.obj) {
+	if(nearest_hit.data) {
 		if(hit) {
 			*hit = nearest_hit;
 
 			// if we are interested in the mesh and not the faces set obj to this
 			if(Mesh::intersect_mode & ISECT_FACE) {
-				hit->obj = &hitface;
+				hit->data = &hitface;
 			} else if(Mesh::intersect_mode & ISECT_VERTICES) {
-				hit->obj = &hitvert;
+				hit->data = &hitvert;
 			} else {
-				hit->obj = this;
+				hit->data = (void*)this;
 			}
 		}
 		return true;
@@ -917,19 +986,19 @@ bool Mesh::intersect(const Ray &ray, HitPoint *hit) const
 
 
 // texture coordinate manipulation
-void Mesh::texcoord_apply_xform(const Matrix4x4 &xform)
+void Mesh::texcoord_apply_xform(const Mat4 &xform)
 {
 	if(!has_attrib(MESH_ATTR_TEXCOORD)) {
 		return;
 	}
 
 	for(unsigned int i=0; i<nverts; i++) {
-		Vector4 tc = get_attrib(MESH_ATTR_TEXCOORD, i);
-		set_attrib(MESH_ATTR_TEXCOORD, i, tc.transformed(xform));
+		Vec4 tc = get_attrib(MESH_ATTR_TEXCOORD, i);
+		set_attrib(MESH_ATTR_TEXCOORD, i, xform * tc);
 	}
 }
 
-void Mesh::texcoord_gen_plane(const Vector3 &norm, const Vector3 &tang)
+void Mesh::texcoord_gen_plane(const Vec3 &norm, const Vec3 &tang)
 {
 	if(!nverts) return;
 
@@ -938,19 +1007,19 @@ void Mesh::texcoord_gen_plane(const Vector3 &norm, const Vector3 &tang)
 		set_attrib_data(MESH_ATTR_TEXCOORD, 2, nverts);
 	}
 
-	Vector3 n = norm.normalized();
-	Vector3 b = cross_product(n, tang).normalized();
-	Vector3 t = cross_product(b, n);
+	Vec3 n = normalize(norm);
+	Vec3 b = normalize(cross(n, tang));
+	Vec3 t = cross(b, n);
 
 	for(unsigned int i=0; i<nverts; i++) {
-		Vector3 pos = get_attrib(MESH_ATTR_VERTEX, i);
+		Vec3 pos = Vec3(get_attrib(MESH_ATTR_VERTEX, i));
 
 		// distance along the tangent direction
-		float u = dot_product(pos, t);
+		float u = dot(pos, t);
 		// distance along the bitangent direction
-		float v = dot_product(pos, b);
+		float v = dot(pos, b);
 
-		set_attrib(MESH_ATTR_TEXCOORD, i, Vector4(u, v, 0, 1));
+		set_attrib(MESH_ATTR_TEXCOORD, i, Vec4(u, v, 0, 1));
 	}
 }
 
@@ -964,8 +1033,8 @@ void Mesh::texcoord_gen_box()
 	}
 
 	for(unsigned int i=0; i<nverts; i++) {
-		Vector3 pos = Vector3(get_attrib(MESH_ATTR_VERTEX, i)) * 0.5 + Vector3(0.5, 0.5, 0.5);
-		Vector3 norm = get_attrib(MESH_ATTR_NORMAL, i);
+		Vec3 pos = Vec3(get_attrib(MESH_ATTR_VERTEX, i)) * 0.5 + Vec3(0.5, 0.5, 0.5);
+		Vec3 norm = Vec3(get_attrib(MESH_ATTR_NORMAL, i));
 
 		float abs_nx = fabs(norm.x);
 		float abs_ny = fabs(norm.y);
@@ -978,8 +1047,145 @@ void Mesh::texcoord_gen_box()
 
 			*uvptr++ = pos[j];
 		}
-		set_attrib(MESH_ATTR_TEXCOORD, i, Vector4(uv[0], uv[1], 0, 1));
+		set_attrib(MESH_ATTR_TEXCOORD, i, Vec4(uv[0], uv[1], 0, 1));
 	}
+}
+
+void Mesh::texcoord_gen_cylinder()
+{
+	if(!nverts) return;
+
+	if(!has_attrib(MESH_ATTR_TEXCOORD)) {
+		// allocate texture coordinate attribute array
+		set_attrib_data(MESH_ATTR_TEXCOORD, 2, nverts);
+	}
+
+	for(unsigned int i=0; i<nverts; i++) {
+		Vec3 pos = Vec3(get_attrib(MESH_ATTR_VERTEX, i));
+
+		float rho = sqrt(pos.x * pos.x + pos.z * pos.z);
+		float theta = rho == 0.0 ? 0.0 : atan2(pos.z / rho, pos.x / rho);
+
+		float u = theta / (2.0 * M_PI) + 0.5;
+		float v = pos.y;
+
+		set_attrib(MESH_ATTR_TEXCOORD, i, Vec4(u, v, 0, 1));
+	}
+}
+
+
+bool Mesh::dump(const char *fname) const
+{
+	FILE *fp = fopen(fname, "wb");
+	if(fp) {
+		bool res = dump(fp);
+		fclose(fp);
+		return res;
+	}
+	return false;
+}
+
+bool Mesh::dump(FILE *fp) const
+{
+	if(!has_attrib(MESH_ATTR_VERTEX)) {
+		return false;
+	}
+
+	fprintf(fp, "VERTEX ATTRIBUTES\n");
+	static const char *label[] = { "pos", "nor", "tan", "tex", "col", "bw", "bid", "tex2" };
+	static const char *elemfmt[] = { 0, " %s(%g)", " %s(%g, %g)", " %s(%g, %g, %g)", " %s(%g, %g, %g, %g)", 0 };
+
+	for(int i=0; i<(int)nverts; i++) {
+		fprintf(fp, "%5u:", i);
+		for(int j=0; j<NUM_MESH_ATTR; j++) {
+			if(has_attrib(j)) {
+				Vec4 v = get_attrib(j, i);
+				int nelem = vattr[j].nelem;
+				fprintf(fp, elemfmt[nelem], label[j], v.x, v.y, v.z, v.w);
+			}
+		}
+		fputc('\n', fp);
+	}
+
+	if(is_indexed()) {
+		const unsigned int *idx = get_index_data();
+		int numidx = get_index_count();
+		int numtri = numidx / 3;
+		assert(numidx % 3 == 0);
+
+		fprintf(fp, "FACES\n");
+
+		for(int i=0; i<numtri; i++) {
+			fprintf(fp, "%5d: %d %d %d\n", i, idx[0], idx[1], idx[2]);
+			idx += 3;
+		}
+	}
+	return true;
+}
+
+bool Mesh::dump_obj(const char *fname) const
+{
+	FILE *fp = fopen(fname, "wb");
+	if(fp) {
+		bool res = dump_obj(fp);
+		fclose(fp);
+		return res;
+	}
+	return false;
+}
+
+bool Mesh::dump_obj(FILE *fp) const
+{
+	if(!has_attrib(MESH_ATTR_VERTEX)) {
+		return false;
+	}
+
+	for(int i=0; i<(int)nverts; i++) {
+		Vec4 v = get_attrib(MESH_ATTR_VERTEX, i);
+		fprintf(fp, "v %g %g %g\n", v.x, v.y, v.z);
+	}
+
+	if(has_attrib(MESH_ATTR_NORMAL)) {
+		for(int i=0; i<(int)nverts; i++) {
+			Vec4 v = get_attrib(MESH_ATTR_NORMAL, i);
+			fprintf(fp, "vn %g %g %g\n", v.x, v.y, v.z);
+		}
+	}
+
+	if(has_attrib(MESH_ATTR_TEXCOORD)) {
+		for(int i=0; i<(int)nverts; i++) {
+			Vec4 v = get_attrib(MESH_ATTR_TEXCOORD, i);
+			fprintf(fp, "vt %g %g\n", v.x, v.y);
+		}
+	}
+
+	if(is_indexed()) {
+		const unsigned int *idxptr = get_index_data();
+		int numidx = get_index_count();
+		int numtri = numidx / 3;
+		assert(numidx % 3 == 0);
+
+		for(int i=0; i<numtri; i++) {
+			fputc('f', fp);
+			for(int j=0; j<3; j++) {
+				unsigned int idx = *idxptr++ + 1;
+				fprintf(fp, " %u/%u/%u", idx, idx, idx);
+			}
+			fputc('\n', fp);
+		}
+	} else {
+		int numtri = nverts / 3;
+		unsigned int idx = 1;
+		for(int i=0; i<numtri; i++) {
+			fputc('f', fp);
+			for(int j=0; j<3; j++) {
+				fprintf(fp, " %u/%u/%u", idx, idx, idx);
+				++idx;
+			}
+			fputc('\n', fp);
+		}
+	}
+	return true;
 }
 
 // ------ private member functions ------
@@ -991,11 +1197,11 @@ void Mesh::calc_aabb()
 		return;
 	}
 
-	aabb.min = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+	aabb.min = Vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 	aabb.max = -aabb.min;
 
 	for(unsigned int i=0; i<nverts; i++) {
-		Vector4 v = get_attrib(MESH_ATTR_VERTEX, i);
+		Vec4 v = get_attrib(MESH_ATTR_VERTEX, i);
 		for(int j=0; j<3; j++) {
 			if(v[j] < aabb.min[j]) {
 				aabb.min[j] = v[j];
@@ -1015,20 +1221,20 @@ void Mesh::calc_bsph()
 		return;
 	}
 
-	Vector3 v;
-	bsph.center = Vector3(0, 0, 0);
+	Vec3 v;
+	bsph.center = Vec3(0, 0, 0);
 
 	// first find the center
 	for(unsigned int i=0; i<nverts; i++) {
-		v = get_attrib(MESH_ATTR_VERTEX, i);
+		v = Vec3(get_attrib(MESH_ATTR_VERTEX, i));
 		bsph.center += v;
 	}
 	bsph.center /= (float)nverts;
 
 	bsph.radius = 0.0f;
 	for(unsigned int i=0; i<nverts; i++) {
-		v = get_attrib(MESH_ATTR_VERTEX, i);
-		float dist_sq = (v - bsph.center).length_sq();
+		v = Vec3(get_attrib(MESH_ATTR_VERTEX, i));
+		float dist_sq = length_sq(v - bsph.center);
 		if(dist_sq > bsph.radius) {
 			bsph.radius = dist_sq;
 		}
@@ -1069,14 +1275,16 @@ void Mesh::update_wire_ibo()
 		glGenBuffers(1, &wire_ibo);
 	}
 
-	unsigned int *wire_idxarr = new unsigned int[nfaces * 6];
+	int num_faces = get_poly_count();
+
+	unsigned int *wire_idxarr = new unsigned int[num_faces * 6];
 	unsigned int *dest = wire_idxarr;
 
 	if(ibo_valid) {
 		// we're dealing with an indexed mesh
 		const unsigned int *idxarr = ((const Mesh*)this)->get_index_data();
 
-		for(unsigned int i=0; i<nfaces; i++) {
+		for(int i=0; i<num_faces; i++) {
 			*dest++ = idxarr[0];
 			*dest++ = idxarr[1];
 			*dest++ = idxarr[1];
@@ -1087,7 +1295,7 @@ void Mesh::update_wire_ibo()
 		}
 	} else {
 		// not an indexed mesh ...
-		for(unsigned int i=0; i<nfaces; i++) {
+		for(int i=0; i<num_faces; i++) {
 			int vidx = i * 3;
 			*dest++ = vidx;
 			*dest++ = vidx + 1;
@@ -1099,7 +1307,7 @@ void Mesh::update_wire_ibo()
 	}
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wire_ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, nfaces * 6 * sizeof(unsigned int), wire_idxarr, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_faces * 6 * sizeof(unsigned int), wire_idxarr, GL_STATIC_DRAW);
 	delete [] wire_idxarr;
 	wire_ibo_valid = true;
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -1113,7 +1321,7 @@ Triangle::Triangle()
 	id = -1;
 }
 
-Triangle::Triangle(const Vector3 &v0, const Vector3 &v1, const Vector3 &v2)
+Triangle::Triangle(const Vec3 &v0, const Vec3 &v1, const Vec3 &v2)
 {
 	v[0] = v0;
 	v[1] = v1;
@@ -1122,7 +1330,7 @@ Triangle::Triangle(const Vector3 &v0, const Vector3 &v1, const Vector3 &v2)
 	id = -1;
 }
 
-Triangle::Triangle(int n, const Vector3 *varr, const unsigned int *idxarr)
+Triangle::Triangle(int n, const Vec3 *varr, const unsigned int *idxarr)
 {
 	if(idxarr) {
 		v[0] = varr[idxarr[n * 3]];
@@ -1139,11 +1347,11 @@ Triangle::Triangle(int n, const Vector3 *varr, const unsigned int *idxarr)
 
 void Triangle::calc_normal()
 {
-	normal = cross_product(v[1] - v[0], v[2] - v[0]).normalized();
+	normal = normalize(cross(v[1] - v[0], v[2] - v[0]));
 	normal_valid = true;
 }
 
-const Vector3 &Triangle::get_normal() const
+const Vec3 &Triangle::get_normal() const
 {
 	if(!normal_valid) {
 		((Triangle*)this)->calc_normal();
@@ -1151,20 +1359,18 @@ const Vector3 &Triangle::get_normal() const
 	return normal;
 }
 
-void Triangle::transform(const Matrix4x4 &xform)
+void Triangle::transform(const Mat4 &xform)
 {
-	v[0].transform(xform);
-	v[1].transform(xform);
-	v[2].transform(xform);
+	v[0] = xform * v[0];
+	v[1] = xform * v[1];
+	v[2] = xform * v[2];
 	normal_valid = false;
 }
 
 void Triangle::draw() const
 {
-	Vector3 n[3];
-	n[0] = get_normal();
-	n[1] = get_normal();
-	n[2] = get_normal();
+	Vec3 n[3];
+	n[0] = n[1] = n[2] = get_normal();
 
 	int vloc = Mesh::get_attrib_location(MESH_ATTR_VERTEX);
 	int nloc = Mesh::get_attrib_location(MESH_ATTR_NORMAL);
@@ -1192,36 +1398,36 @@ void Triangle::draw_wire() const
 	glDisableVertexAttribArray(vloc);
 }
 
-Vector3 Triangle::calc_barycentric(const Vector3 &pos) const
+Vec3 Triangle::calc_barycentric(const Vec3 &pos) const
 {
-	Vector3 norm = get_normal();
+	Vec3 norm = get_normal();
 
-	float area_sq = fabs(dot_product(cross_product(v[1] - v[0], v[2] - v[0]), norm));
+	float area_sq = fabs(dot(cross(v[1] - v[0], v[2] - v[0]), norm));
 	if(area_sq < 1e-5) {
-		return Vector3(0, 0, 0);
+		return Vec3(0, 0, 0);
 	}
 
-	float asq0 = fabs(dot_product(cross_product(v[1] - pos, v[2] - pos), norm));
-	float asq1 = fabs(dot_product(cross_product(v[2] - pos, v[0] - pos), norm));
-	float asq2 = fabs(dot_product(cross_product(v[0] - pos, v[1] - pos), norm));
+	float asq0 = fabs(dot(cross(v[1] - pos, v[2] - pos), norm));
+	float asq1 = fabs(dot(cross(v[2] - pos, v[0] - pos), norm));
+	float asq2 = fabs(dot(cross(v[0] - pos, v[1] - pos), norm));
 
-	return Vector3(asq0 / area_sq, asq1 / area_sq, asq2 / area_sq);
+	return Vec3(asq0 / area_sq, asq1 / area_sq, asq2 / area_sq);
 }
 
 bool Triangle::intersect(const Ray &ray, HitPoint *hit) const
 {
-	Vector3 normal = get_normal();
+	Vec3 normal = get_normal();
 
-	float ndotdir = dot_product(ray.dir, normal);
+	float ndotdir = dot(ray.dir, normal);
 	if(fabs(ndotdir) < 1e-4) {
 		return false;
 	}
 
-	Vector3 vertdir = v[0] - ray.origin;
-	float t = dot_product(normal, vertdir) / ndotdir;
+	Vec3 vertdir = v[0] - ray.origin;
+	float t = dot(normal, vertdir) / ndotdir;
 
-	Vector3 pos = ray.origin + ray.dir * t;
-	Vector3 bary = calc_barycentric(pos);
+	Vec3 pos = ray.origin + ray.dir * t;
+	Vec3 bary = calc_barycentric(pos);
 
 	if(bary.x + bary.y + bary.z > 1.00001) {
 		return false;
@@ -1231,7 +1437,7 @@ bool Triangle::intersect(const Ray &ray, HitPoint *hit) const
 		hit->dist = t;
 		hit->pos = ray.origin + ray.dir * t;
 		hit->normal = normal;
-		hit->obj = this;
+		hit->data = (void*)this;
 	}
 	return true;
 }

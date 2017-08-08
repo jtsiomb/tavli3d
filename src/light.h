@@ -1,12 +1,12 @@
 #ifndef LIGHT_H_
 #define LIGHT_H_
 
-#include "vmath/vmath.h"
+#include <gmath/gmath.h>
 
 class Light {
 public:
-	Vector3 pos;
-	Vector3 color;
+	Vec3 pos;
+	Vec3 color;
 
 	Light();
 

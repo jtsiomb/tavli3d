@@ -73,59 +73,59 @@ Object *SceneNode::get_object(int idx) const
 	return obj[idx];
 }
 
-void SceneNode::set_position(const Vector3 &pos)
+void SceneNode::set_position(const Vec3 &pos)
 {
 	this->pos = pos;
 }
 
-void SceneNode::set_rotation(const Quaternion &rot)
+void SceneNode::set_rotation(const Quat &rot)
 {
 	this->rot = rot;
 }
 
-void SceneNode::set_scaling(const Vector3 &scale)
+void SceneNode::set_scaling(const Vec3 &scale)
 {
 	this->scale = scale;
 }
 
 
-const Vector3 &SceneNode::get_node_position() const
+const Vec3 &SceneNode::get_node_position() const
 {
 	return pos;
 }
 
-const Quaternion &SceneNode::get_node_rotation() const
+const Quat &SceneNode::get_node_rotation() const
 {
 	return rot;
 }
 
-const Vector3 &SceneNode::get_node_scaling() const
+const Vec3 &SceneNode::get_node_scaling() const
 {
 	return scale;
 }
 
 
-Vector3 SceneNode::get_position() const
+Vec3 SceneNode::get_position() const
 {
-	return Vector3(0, 0, 0).transformed(xform);
+	return Vec3(0, 0, 0) * xform;
 }
 
-Quaternion SceneNode::get_rotation() const
+Quat SceneNode::get_rotation() const
 {
 	return rot;	// TODO
 }
 
-Vector3 SceneNode::get_scaling() const
+Vec3 SceneNode::get_scaling() const
 {
 	return scale;	// TODO
 }
 
-const Matrix4x4 &SceneNode::get_matrix() const
+const Mat4 &SceneNode::get_matrix() const
 {
 	return xform;
 }
 
-const Matrix4x4 &SceneNode::get_inv_matrix() const
+const Mat4 &SceneNode::get_inv_matrix() const
 {
 	return inv_xform;
 }
@@ -133,7 +133,7 @@ const Matrix4x4 &SceneNode::get_inv_matrix() const
 
 void SceneNode::update_node(long msec)
 {
-	xform.reset_identity();
+	xform = Mat4::identity;
 	xform.translate(pos);
 	xform.rotate(rot);
 	xform.scale(scale);
@@ -141,7 +141,7 @@ void SceneNode::update_node(long msec)
 	if(parent) {
 		xform = parent->xform * xform;
 	}
-	inv_xform = xform.inverse();
+	inv_xform = inverse(xform);
 }
 
 void SceneNode::update(long msec)
@@ -156,7 +156,7 @@ void SceneNode::update(long msec)
 
 bool SceneNode::intersect(const Ray &ray, HitPoint *hit) const
 {
-	Ray local_ray = ray.transformed(inv_xform);
+	Ray local_ray = ray * inv_xform;
 
 	HitPoint nearest;
 	nearest.dist = FLT_MAX;

@@ -41,22 +41,22 @@ Object::~Object()
 	delete mesh;
 }
 
-Matrix4x4 &Object::xform()
+Mat4 &Object::xform()
 {
 	return matrix;
 }
 
-const Matrix4x4 &Object::xform() const
+const Mat4 &Object::xform() const
 {
 	return matrix;
 }
 
-Matrix4x4 &Object::tex_xform()
+Mat4 &Object::tex_xform()
 {
 	return tex_matrix;
 }
 
-const Matrix4x4 &Object::tex_xform() const
+const Mat4 &Object::tex_xform() const
 {
 	return tex_matrix;
 }
@@ -115,14 +115,14 @@ void Object::draw() const
 
 		glMatrixMode(GL_TEXTURE);
 		glPushMatrix();
-		glLoadTransposeMatrixf(tex_matrix[0]);
+		glLoadMatrixf(tex_matrix[0]);
 	} else {
 		glDisable(GL_TEXTURE_2D);
 	}
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	glMultTransposeMatrixf(matrix[0]);
+	glMultMatrixf(matrix[0]);
 
 	float dcol[] = {mtl.diffuse.x, mtl.diffuse.y, mtl.diffuse.z, mtl.alpha};
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, dcol);
@@ -149,7 +149,7 @@ void Object::draw() const
 	glPopAttrib();
 }
 
-void Object::draw_wire(const Vector4 &col) const
+void Object::draw_wire(const Vec4 &col) const
 {
 	if(shadow_pass) return;
 
@@ -159,7 +159,7 @@ void Object::draw_wire(const Vector4 &col) const
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	glMultTransposeMatrixf(matrix[0]);
+	glMultMatrixf(matrix[0]);
 
 	glColor4f(col.x, col.y, col.z, col.w);
 	mesh->draw_wire();
@@ -168,7 +168,7 @@ void Object::draw_wire(const Vector4 &col) const
 	glPopAttrib();
 }
 
-void Object::draw_vertices(const Vector4 &col) const
+void Object::draw_vertices(const Vec4 &col) const
 {
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_LIGHTING);
@@ -176,7 +176,7 @@ void Object::draw_vertices(const Vector4 &col) const
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	glMultTransposeMatrixf(matrix[0]);
+	glMultMatrixf(matrix[0]);
 
 	glColor4f(col.x, col.y, col.z, col.w);
 	mesh->draw_vertices();
@@ -185,14 +185,14 @@ void Object::draw_vertices(const Vector4 &col) const
 	glPopAttrib();
 }
 
-void Object::draw_normals(float len, const Vector4 &col) const
+void Object::draw_normals(float len, const Vec4 &col) const
 {
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_LIGHTING);
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	glMultTransposeMatrixf(matrix[0]);
+	glMultMatrixf(matrix[0]);
 
 	glColor4f(col.x, col.y, col.z, col.w);
 	mesh->set_vis_vecsize(len);
@@ -202,14 +202,14 @@ void Object::draw_normals(float len, const Vector4 &col) const
 	glPopAttrib();
 }
 
-void Object::draw_tangents(float len, const Vector4 &col) const
+void Object::draw_tangents(float len, const Vec4 &col) const
 {
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_LIGHTING);
 
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	glMultTransposeMatrixf(matrix[0]);
+	glMultMatrixf(matrix[0]);
 
 	glColor4f(col.x, col.y, col.z, col.w);
 	mesh->set_vis_vecsize(len);

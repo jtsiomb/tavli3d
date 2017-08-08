@@ -1,13 +1,13 @@
 #ifndef GAME_H_
 #define GAME_H_
 
-#include "vmath/vmath.h"
+#include <gmath/gmath.h>
 
 extern int win_width, win_height;
 extern unsigned int sdr_phong, sdr_phong_notex;
 extern unsigned int sdr_shadow, sdr_shadow_notex;
 extern unsigned int sdr_unlit;
-extern unsigned long cur_time;
+extern long cur_time;
 
 extern Ray pick_ray;
 

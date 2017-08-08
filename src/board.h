@@ -31,7 +31,7 @@ public:
 	Triangle tri0, tri1;
 
 	Quad();
-	Quad(const Vector3 &v0, const Vector3 &v1, const Vector3 &v2, const Vector3 &v3);
+	Quad(const Vec3 &v0, const Vec3 &v1, const Vec3 &v2, const Vec3 &v3);
 
 	bool intersect(const Ray &ray, HitPoint *hit = 0) const;
 };
@@ -68,7 +68,7 @@ public:
 	const Piece *get_top_piece(int slot) const;
 	bool move_piece(int id, int slot, bool anim = true);
 
-	Vector3 piece_pos(int slot, int level = 0) const;
+	Vec3 piece_pos(int slot, int level = 0) const;
 
 	int slot_hit(const Ray &ray) const;
 	void select_slot(int idx);
