@@ -4,7 +4,7 @@
 #include <gmath/gmath.h>
 #include <drawtext.h>
 #include "opengl.h"
-#include "ui.h"
+#include "glui.h"
 #include "game.h"
 
 #define FONTSZ	16

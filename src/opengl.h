@@ -1,7 +1,12 @@
 #ifndef OPENGL_H_
 #define OPENGL_H_
 
-#include <GL/glew.h>
+#define GL_GLEXT_PROTOTYPES 1
+
+/*#include <GL/glew.h> */
+#include <GL/gl.h>
+#include <GL/glext.h>
+#include <GL/glu.h>
 
 struct GLCaps {
 	int shaders;
@@ -9,6 +14,8 @@ struct GLCaps {
 	int sep_spec;
 	int fbo;
 	int shadow;
+	int gen_mipmaps;
+	int aniso, max_aniso;
 };
 extern struct GLCaps glcaps;
 

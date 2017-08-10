@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "logger.h"
-#include "ui.h"
+#include "glui.h"
 
 #if defined(unix) || defined(__unix__) || defined(__APPLE__)
 #include <unistd.h>

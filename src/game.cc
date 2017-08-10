@@ -114,6 +114,8 @@ void game_display()
 	glRotatef(cam_phi, 1, 0, 0);
 	glRotatef(cam_theta, 0, 1, 0);
 
+	assert(glGetError() == GL_NO_ERROR);
+
 	float lpos[] = {-10, 20, 10, 1};
 	glLightfv(GL_LIGHT0, GL_POSITION, lpos);
 

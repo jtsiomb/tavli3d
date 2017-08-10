@@ -58,6 +58,7 @@ void destroy_shadow()
 
 void begin_shadow_pass(const Vec3 &lpos, const Vec3 &ltarg, float lfov)
 {
+	assert(!shadow_pass);
 	shadow_pass = true;
 
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT);
@@ -96,18 +97,27 @@ void begin_shadow_pass(const Vec3 &lpos, const Vec3 &ltarg, float lfov)
 
 void end_shadow_pass()
 {
+	assert(shadow_pass);
 	shadow_pass = false;
 
+	assert(glGetError() == GL_NO_ERROR);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glViewport(prev_vp[0], prev_vp[1], prev_vp[2], prev_vp[3]);
+	assert(glGetError() == GL_NO_ERROR);
 
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
+	assert(glGetError() == GL_NO_ERROR);
 
 	glPopAttrib();
+	unsigned int err = glGetError();
+	if(err) {
+		fprintf(stderr, "GL Error: %x\n", err);
+	}
+	assert(err == GL_NO_ERROR);
 }
 
 Mat4 get_shadow_matrix()

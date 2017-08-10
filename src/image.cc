@@ -94,7 +94,7 @@ unsigned int Image::texture() const
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-		if(GLEW_SGIS_generate_mipmap) {
+		if(glcaps.gen_mipmaps) {
 			glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, 1);
 
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_width, tex_height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
@@ -106,15 +106,8 @@ unsigned int Image::texture() const
 			gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, tex_width, tex_height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 		}
 
-		if(GLEW_EXT_texture_filter_anisotropic) {
-			static float max_aniso = -1.0;
-
-			if(max_aniso < 0.0) {
-				glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_aniso);
-				printf("using anisotropic filtering: x%g\n", max_aniso);
-			}
-
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max_aniso);
+		if(glcaps.aniso) {
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, glcaps.max_aniso);
 		}
 		tex_valid = true;
 	}

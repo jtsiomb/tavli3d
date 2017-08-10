@@ -78,7 +78,7 @@ void Object::set_texture(unsigned int tex)
 
 void Object::set_shader(unsigned int sdr)
 {
-	if(GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader) {
+	if(glcaps.shaders) {
 		this->sdr = sdr;
 	}
 }
