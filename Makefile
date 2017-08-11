@@ -1,21 +1,28 @@
 PREFIX ?= /usr/local
+#sys = glut
+sys = sdl
 
-src = $(wildcard src/*.cc)
-csrc = $(wildcard src/*.c)
+src = $(wildcard src/*.cc) $(wildcard src/$(sys)/*.cc)
+csrc = $(wildcard src/*.c) $(wildcard src/$(sys)/*.c)
 obj = $(src:.cc=.o) $(csrc:.c=.o)
 dep = $(obj:.o=.d)
 
 bin = tavli
 
-CFLAGS = -pedantic -Wall -g
-CXXFLAGS = -pedantic -Wall -g
-LDFLAGS = $(libgl) -lm -lpthread -ldl -lpng -ljpeg -lz -lgmath -limago -ldrawtext -lvmath
+CFLAGS = -pedantic -Wall -g -Isrc $(inc$(sys))
+CXXFLAGS = -pedantic -Wall -g -Isrc $(inc$(sys))
+LDFLAGS = $(libgl) $(lib$(sys)) -lm -lpthread -ldl -lpng -ljpeg -lz -lgmath -limago -ldrawtext -lvmath
 
 ifeq ($(shell uname -s), Darwin)
-	libgl = -framework OpenGL -framework GLUT -lGLEW
+	libgl = -framework OpenGL -lGLEW
+	libglut = -framework GLUT
 else
-	libgl = -lGL -lGLU -lglut -lGLEW
+	libgl = -lGL -lGLU -lGLEW
+	libglut = -lglut
 endif
+
+incsdl = `pkg-config --cflags sdl2`
+libsdl = `pkg-config --libs sdl2`
 
 $(bin): $(obj)
 	$(CXX) -o $@ $(obj) $(LDFLAGS)

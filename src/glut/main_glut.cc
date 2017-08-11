@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <GL/glew.h>
+#include "opengl.h"
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
