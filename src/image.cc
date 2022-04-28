@@ -1,8 +1,9 @@
+#include <stdio.h>
 #include <string.h>
 #include <alloca.h>
 #include "opengl.h"
 #include "image.h"
-#include "imago2.h"
+/*#include "imago2.h"*/
 
 
 static unsigned int next_pow2(unsigned int x);
@@ -69,12 +70,15 @@ void Image::destroy()
 
 bool Image::load(const char *fname)
 {
+	/*
 	int xsz, ysz;
 	unsigned char *pix = (unsigned char*)img_load_pixels(fname, &xsz, &ysz, IMG_FMT_RGBA32);
 	if(!pix) {
 		return false;
 	}
 	return create(xsz, ysz, pix);
+	*/
+	return false;
 }
 
 unsigned int Image::texture() const

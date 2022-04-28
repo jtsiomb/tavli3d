@@ -201,8 +201,6 @@ static bool gen_textures()
 	for(int i=0; i<img_coffee.height; i++) {
 		float v = (float)i / (float)img_coffee.height;
 		for(int j=0; j<img_coffee.width; j++) {
-			float u = (float)j / (float)img_coffee.width;
-
 			Vec3 col = v < 0.4 ? foam_col : coffee_col;
 
 			int r, g, b;

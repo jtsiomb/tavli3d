@@ -5,7 +5,7 @@
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
-#include <GL/glut.h>
+#include "miniglut.h"
 #endif
 #include "game.h"
 #include "opt.h"

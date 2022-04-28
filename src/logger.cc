@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "logger.h"
-#include "ui.h"
 
 #if defined(unix) || defined(__unix__) || defined(__APPLE__)
 #include <unistd.h>
@@ -61,9 +60,11 @@ extern "C" void warning_log(const char *fmt, ...)
 	logmsg(LOG_WARNING, fmt, ap);
 	va_end(ap);
 
+	/*
 	va_start(ap, fmt);
 	show_messagev(UI_MSG_TIMEOUT, Vec3(1.0, 0.8, 0.1), fmt, ap);
 	va_end(ap);
+	*/
 }
 
 extern "C" void error_log(const char *fmt, ...)
@@ -74,9 +75,11 @@ extern "C" void error_log(const char *fmt, ...)
 	logmsg(LOG_ERROR, fmt, ap);
 	va_end(ap);
 
+	/*
 	va_start(ap, fmt);
 	show_messagev(UI_MSG_TIMEOUT, Vec3(1.0, 0.1, 0.1), fmt, ap);
 	va_end(ap);
+	*/
 }
 
 extern "C" void fatal_log(const char *fmt, ...)

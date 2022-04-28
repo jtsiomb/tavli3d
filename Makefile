@@ -1,24 +1,29 @@
 PREFIX ?= /usr/local
-#sys = glut
-sys = sdl
+sys = glut
+#sys = sdl
 
-src = $(wildcard src/*.cc) $(wildcard src/$(sys)/*.cc)
-csrc = $(wildcard src/*.c) $(wildcard src/$(sys)/*.c)
+src = $(wildcard src/*.cc) $(wildcard src/$(sys)/*.cc) \
+	  $(wildcard libs/gph-math/*.cc)
+csrc = $(wildcard src/*.c) $(wildcard src/$(sys)/*.c) \
+	   $(wildcard libs/miniglut/*.c) $(wildcard libs/glew/*.c)
 obj = $(src:.cc=.o) $(csrc:.c=.o)
 dep = $(obj:.o=.d)
 
 bin = tavli
 
-CFLAGS = -pedantic -Wall -g -Isrc $(inc$(sys))
-CXXFLAGS = -pedantic -Wall -g -Isrc $(inc$(sys))
-LDFLAGS = $(libgl) $(lib$(sys)) -lm -lpthread -ldl -lpng -ljpeg -lz -lgmath -limago -ldrawtext -lvmath
+inc = -Isrc $(inc$(sys)) -Ilibs/miniglut -Ilibs/glew -Ilibs/gph-math
+def = -DGLEW_STATIC -DMINIGLUT_USE_LIBC
+
+CFLAGS = -pedantic -Wall -g $(inc) $(def) -MMD
+CXXFLAGS = -pedantic -Wall -g $(inc) $(def) -MMD
+LDFLAGS = $(libgl) $(lib$(sys)) -lm
 
 ifeq ($(shell uname -s), Darwin)
-	libgl = -framework OpenGL -lGLEW
+	libgl = -framework OpenGL
 	libglut = -framework GLUT
 else
-	libgl = -lGL -lGLU -lGLEW
-	libglut = -lglut
+	libgl = -lGL -lGLU
+	libglut = -lX11
 endif
 
 incsdl = `pkg-config --cflags sdl2`
@@ -28,12 +33,6 @@ $(bin): $(obj)
 	$(CXX) -o $@ $(obj) $(LDFLAGS)
 
 -include $(dep)
-
-%.d: %.c
-	@$(CPP) $(CFLAGS) $< -MM -MT $(@:.d=.o) >$@
-
-%.d: %.cc
-	@$(CPP) $(CXXFLAGS) $< -MM -MT $(@:.d=.o) >$@
 
 .PHONY: clean
 clean:
