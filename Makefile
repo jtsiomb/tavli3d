@@ -3,7 +3,7 @@ sys = glut
 #sys = sdl
 
 src = $(wildcard src/*.cc) $(wildcard src/$(sys)/*.cc) \
-	  $(wildcard libs/gph-math/*.cc)
+	  $(wildcard libs/gmath/*.cc)
 csrc = $(wildcard src/*.c) $(wildcard src/$(sys)/*.c) \
 	   $(wildcard libs/miniglut/*.c) $(wildcard libs/glew/*.c)
 obj = $(src:.cc=.o) $(csrc:.c=.o)
@@ -11,7 +11,7 @@ dep = $(obj:.o=.d)
 
 bin = tavli
 
-inc = -Isrc $(inc$(sys)) -Ilibs/miniglut -Ilibs/glew -Ilibs/gph-math
+inc = -Isrc $(inc$(sys)) -Ilibs -Ilibs/miniglut -Ilibs/glew
 def = -DGLEW_STATIC -DMINIGLUT_USE_LIBC
 
 CFLAGS = -pedantic -Wall -g $(inc) $(def) -MMD
